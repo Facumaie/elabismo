@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Abismo de las Hordas — Roguelite</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0C0D12; --panel:#15171F; --panel2:#1C1F2A; --line:#2A2E3D;
+  --txt:#E8E6DD; --mut:#8B8FA3;
+  --gold:#D4A93C; --blood:#C9403A; --life:#3DA86E; --soul:#7B6CE0;
+  --r0:#9AA0B0; --r1:#4D8FE0; --r2:#A465E8; --r3:#E8A23C;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'IBM Plex Sans',system-ui,sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,#1A1C2880 0%,transparent 60%);pointer-events:none}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 60px;position:relative}
+h1{font-family:'Cinzel',serif;font-size:clamp(22px,4vw,34px);font-weight:800;letter-spacing:3px;text-align:center;color:var(--gold);text-shadow:0 0 24px #D4A93C33}
+.sub{text-align:center;color:var(--mut);font-size:13px;margin:4px 0 18px;letter-spacing:1px}
+.hud{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.hud span{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 14px;font-size:13px;color:var(--mut)}
+.hud b{color:var(--txt);font-weight:600;margin-left:4px}
+.hud .g b{color:var(--gold)} .hud .s b{color:var(--soul)}
+
+.arena{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 14px 14px;position:relative;overflow:hidden}
+.arena.boss{border-color:#7A2A2A;box-shadow:inset 0 0 60px #C9403A14}
+.fight{display:flex;align-items:flex-end;justify-content:space-around;gap:8px;min-height:230px;position:relative}
+.fighter{text-align:center;width:42%;position:relative}
+.sprite{display:inline-block;position:relative}
+.sprite svg{display:block;filter:drop-shadow(0 8px 6px #00000080)}
+.vs{font-family:'Cinzel',serif;font-size:20px;color:#3A3E50;align-self:center;font-weight:800}
+.nm{font-family:'Cinzel',serif;font-size:15px;font-weight:600;margin-top:8px;letter-spacing:1px}
+.nm.boss-n{color:var(--blood)}
+.tag{font-size:11px;color:var(--mut);margin-top:2px}
+.bar{height:14px;background:#0A0B10;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;transition:width .2s;border-radius:6px}
+.hpv{font-size:12px;color:var(--mut);margin-top:4px}
+
+@keyframes lungeR{0%{transform:translateX(0)}40%{transform:translateX(46px)}100%{transform:translateX(0)}}
+@keyframes lungeL{0%{transform:translateX(0)}40%{transform:translateX(-46px)}100%{transform:translateX(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-64px) scale(1.15)}}
+@keyframes deathFall{to{opacity:0;transform:translateY(14px) rotate(8deg)}}
+@keyframes popIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+@keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.sprite svg{animation:breathe 2.6s ease-in-out infinite}
+.atkR svg{animation:lungeR .32s ease-out}
+.atkL svg{animation:lungeL .32s ease-out}
+.hit svg{animation:shake .26s ease-out}
+.dying svg{animation:deathFall .5s ease-in forwards}
+.dmg{position:absolute;left:50%;top:8%;transform:translateX(-50%);font-weight:600;font-size:22px;pointer-events:none;animation:floatUp .9s ease-out forwards;text-shadow:0 2px 4px #000;white-space:nowrap;z-index:5}
+.dmg.crit{color:var(--gold);font-size:28px}
+.dmg.norm{color:#F0EDE4}
+.dmg.recv{color:var(--blood)}
+.dmg.heal{color:var(--life)}
+@media (prefers-reduced-motion:reduce){.sprite svg,.atkR svg,.atkL svg,.hit svg{animation:none}}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+button{font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:600;padding:11px 20px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);cursor:pointer;transition:transform .08s,background .15s}
+button:hover:not(:disabled){background:#252937}
+button:active:not(:disabled){transform:scale(.96)}
+button:disabled{opacity:.35;cursor:not-allowed}
+button.main{background:#3A2F14;border-color:#6B5620;color:var(--gold)}
+button.main:hover:not(:disabled){background:#4A3C18}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+@media(max-width:640px){.panels{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.panel h3{font-family:'Cinzel',serif;font-size:13px;letter-spacing:2px;color:var(--mut);font-weight:600;margin-bottom:10px}
+.slot{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);margin-bottom:7px;font-size:13px;background:#11131A}
+.slot .ic{width:26px;text-align:center;font-size:16px}
+.slot .empty{color:#4A4E60;font-style:italic}
+.statline{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed #22263299}
+.statline:last-child{border:none}
+.statline b{font-weight:600}
+#log{margin-top:14px;background:#0E1016;border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--mut);line-height:1.8;min-height:64px}
+#log div:first-child{color:var(--txt)}
+
+.overlay{position:fixed;inset:0;background:#06070AD9;display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:28px 26px;max-width:480px;width:100%;text-align:center;animation:popIn .25s ease-out;max-height:92vh;overflow-y:auto}
+.modal h2{font-family:'Cinzel',serif;font-size:20px;letter-spacing:2px;margin-bottom:6px}
+.rar{display:inline-block;font-size:11px;font-weight:600;letter-spacing:2px;padding:4px 14px;border-radius:20px;margin:8px 0;text-transform:uppercase}
+.itname{font-size:18px;font-weight:600;margin:8px 0 4px}
+.itstat{font-size:15px;color:var(--gold)}
+.cur{font-size:12px;color:var(--mut);margin-top:8px}
+.mrow{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+
+.meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:16px;text-align:left}
+.meta-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.meta-card h4{font-size:14px;font-weight:600;display:flex;justify-content:space-between}
+.meta-card h4 em{font-style:normal;color:var(--mut);font-size:12px;font-weight:400}
+.meta-card p{font-size:12px;color:var(--mut);margin:4px 0 10px}
+.meta-card button{width:100%;padding:8px;font-size:13px;color:var(--soul);border-color:#3A3560}
+.bigdeath{font-family:'Cinzel',serif;font-size:26px;color:var(--blood);letter-spacing:3px}
+.bigwin{font-family:'Cinzel',serif;font-size:26px;color:var(--gold);letter-spacing:3px}
+.souls-earned{font-size:17px;color:var(--soul);margin:10px 0;font-weight:600}
+.r-0{background:#2A2E3A;color:var(--r0);border:1px solid var(--r0)}
+.r-1{background:#142338;color:var(--r1);border:1px solid var(--r1)}
+.r-2{background:#241838;color:var(--r2);border:1px solid var(--r2)}
+.r-3{background:#382812;color:var(--r3);border:1px solid var(--r3)}
+.b-0{border-left:3px solid var(--r0)} .b-1{border-left:3px solid var(--r1)}
+.b-2{border-left:3px solid var(--r2)} .b-3{border-left:3px solid var(--r3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>EL ABISMO DE LAS HORDAS</h1>
+  <p class="sub">Morí. Mejorá. Bajá más hondo.</p>
+  <div class="hud">
+    <span>Piso <b id="h-piso">1</b></span>
+    <span>Corrida <b id="h-run">1</b></span>
+    <span class="g">Oro <b id="h-oro">0</b></span>
+    <span class="s">Almas <b id="h-almas">0</b></span>
+    <span>Récord <b id="h-best">—</b></span>
+  </div>
+
+  <div class="arena" id="arena">
+    <div class="fight">
+      <div class="fighter" id="f-player">
+        <div class="sprite" id="sp-player"></div>
+        <div class="nm">VOS</div>
+        <div class="tag" id="p-tag"></div>
+        <div class="bar"><i id="p-bar" style="background:linear-gradient(90deg,#2E7A52,#3DA86E)"></i></div>
+        <div class="hpv" id="p-hpv"></div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="fighter" id="f-enemy">
+        <div class="sprite" id="sp-enemy"></div>
+        <div class="nm" id="e-name"></div>
+        <div class="tag" id="e-tag"></div>
+        <div class="bar"><i id="e-bar" style="background:linear-gradient(90deg,#8A2C28,#C9403A)"></i></div>
+        <div class="hpv" id="e-hpv"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="main" id="b-atk" onclick="atacar()">⚔ Atacar</button>
+      <button id="b-poc" onclick="pocion()">Poción (<span id="poc-n">1</span>)</button>
+      <button id="b-buy" onclick="comprarPoc()">Comprar poción · <span id="poc-c">31</span> oro</button>
+    </div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h3>EQUIPO</h3>
+      <div class="slot" id="sl-arma"></div>
+      <div class="slot" id="sl-armadura"></div>
+      <div class="slot" id="sl-amuleto"></div>
+    </div>
+    <div class="panel">
+      <h3>ATRIBUTOS</h3>
+      <div class="statline"><span>Ataque</span><b id="st-atk"></b></div>
+      <div class="statline"><span>Defensa</span><b id="st-def"></b></div>
+      <div class="statline"><span>Crítico</span><b id="st-crit"></b></div>
+      <div class="statline"><span>Robo de vida</span><b id="st-vamp"></b></div>
+      <div class="statline"><span>Enemigos eliminados</span><b id="st-kills">0</b></div>
+    </div>
+  </div>
+
+  <div id="log"></div>
+</div>
+
+<div id="overlay" class="overlay" style="display:none"><div class="modal" id="modal"></div></div>
+
+<script>
+'use strict';
+/* ---------- utilidades ---------- */
+const $=id=>document.getElementById(id);
+const R=(a,b)=>a+Math.random()*(b-a);
+const RI=(a,b)=>Math.floor(R(a,b+1));
+const F=n=>Math.round(n).toLocaleString('es-AR');
+const store={
+  get(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+
+/* ---------- datos ---------- */
+const PISO_FINAL=25;
+const RAR=[
+  {n:'Común',p:.58,m:1},
+  {n:'Raro',p:.26,m:1.7},
+  {n:'Épico',p:.12,m:2.6},
+  {n:'Legendario',p:.04,m:4.2}
+];
+const RARCOL=['#9AA0B0','#4D8FE0','#A465E8','#E8A23C'];
+const NOM={arma:['Espada','Hacha','Maza','Daga','Lanza'],armadura:['Cota','Coraza','Peto','Escudo','Yelmo'],amuleto:['Anillo','Talismán','Colgante','Reliquia','Sello']};
+const ADJ=['oxidada','del lobo','sombría','rúnica','del abismo','ancestral','de la horda','del centinela','maldita','imperial'];
+const ENE=[
+  {n:'Esqueleto',sp:'skeleton'},{n:'Ghoul',sp:'ghoul'},{n:'Bandido',sp:'rogue'},
+  {n:'Lobo feroz',sp:'wolf'},{n:'Cultista',sp:'robed'},{n:'Araña gigante',sp:'spider'},
+  {n:'Espectro',sp:'ghost'},{n:'Orco',sp:'brute'},{n:'Gárgola',sp:'gargoyle'},{n:'Nigromante',sp:'robed'}
+];
+const JEFES=[
+  {n:'Rey Carroñero',sp:'skeleton'},{n:'Matriarca de la Cripta',sp:'spider'},
+  {n:'Señor de la Horda',sp:'brute'},{n:'Coloso de Hueso',sp:'gargoyle'},
+  {n:'EL DEVORADOR',sp:'devourer'}
+];
+const META=[
+  {k:'atk',n:'Fuerza',d:'+3 ATK base por nivel',v:3},
+  {k:'hp',n:'Vitalidad',d:'+25 HP máximo por nivel',v:25},
+  {k:'def',n:'Coraza',d:'+2 DEF base por nivel',v:2},
+  {k:'crit',n:'Precisión',d:'+3% prob. de crítico',v:3},
+  {k:'vamp',n:'Vampirismo',d:'+2% robo de vida',v:2},
+  {k:'oro',n:'Botín',d:'+15% oro saqueado',v:15}
+];
+
+/* ---------- estado ---------- */
+let meta={atk:0,hp:0,def:0,crit:0,vamp:0,oro:0};
+let lvl={atk:0,hp:0,def:0,crit:0,vamp:0,oro:0};
+let almas=0,mejor=0,runs=0;
+let P,E,kills,pendLoot,busy=false;
+let logArr=[];
+
+function guardar(){store.set('abismo_save',JSON.stringify({meta,lvl,almas,mejor,runs}))}
+function cargar(){
+  const s=store.get('abismo_save');
+  if(!s)return;
+  try{const d=JSON.parse(s);meta=d.meta;lvl=d.lvl;almas=d.almas;mejor=d.mejor;runs=d.runs}catch(e){}
+}
+
+/* ---------- sprites SVG ---------- */
+function knightSVG(){
+  const wpn=P.arma?RARCOL[P.arma.rar]:'#6B7280';
+  const shd=P.armadura?RARCOL[P.armadura.rar]:null;
+  const gem=P.amuleto?RARCOL[P.amuleto.rar]:null;
+  return `<svg width="130" height="160" viewBox="0 0 130 160" role="img" aria-label="Tu caballero">
+    <ellipse cx="65" cy="152" rx="36" ry="6" fill="#000" opacity=".45"/>
+    <path d="M58 14 Q52 2 44 6 Q54 8 56 18 Z" fill="#C9403A"/>
+    <path d="M62 12 Q60 0 50 2 Q60 5 61 16 Z" fill="#E0564E"/>
+    <rect x="52" y="12" width="28" height="26" rx="9" fill="#8A93A5" stroke="#3A4150" stroke-width="2"/>
+    <rect x="55" y="24" width="22" height="4" rx="2" fill="#14161D"/>
+    <rect x="50" y="36" width="32" height="6" rx="3" fill="#5C6678"/>
+    <path d="M48 42 L84 42 L88 86 L44 86 Z" fill="#717C92" stroke="#3A4150" stroke-width="2"/>
+    <path d="M56 46 L76 46 L78 64 L54 64 Z" fill="#5C6678"/>
+    ${gem?`<circle cx="66" cy="56" r="6" fill="${gem}" stroke="#fff" stroke-width="1.5"><animate attributeName="opacity" values="1;.5;1" dur="1.6s" repeatCount="indefinite"/></circle>`:''}
+    <rect x="44" y="86" width="44" height="8" rx="3" fill="#4A5264"/>
+    <rect x="48" y="94" width="14" height="36" rx="5" fill="#5C6678" stroke="#3A4150" stroke-width="2"/>
+    <rect x="70" y="94" width="14" height="36" rx="5" fill="#5C6678" stroke="#3A4150" stroke-width="2"/>
+    <rect x="44" y="128" width="20" height="10" rx="4" fill="#3A4150"/>
+    <rect x="68" y="128" width="20" height="10" rx="4" fill="#3A4150"/>
+    <rect x="38" y="48" width="12" height="34" rx="5" fill="#717C92" stroke="#3A4150" stroke-width="2"/>
+    ${shd?`<path d="M18 52 L46 52 L46 88 Q32 100 18 88 Z" fill="#2C313F" stroke="${shd}" stroke-width="3"/><circle cx="32" cy="68" r="5" fill="${shd}"/>`:''}
+    <rect x="82" y="48" width="12" height="30" rx="5" fill="#717C92" stroke="#3A4150" stroke-width="2"/>
+    <g transform="rotate(18 92 70)">
+      <rect x="89" y="18" width="7" height="50" rx="3" fill="${wpn}" stroke="#1A1D26" stroke-width="1.5"/>
+      <path d="M89 18 L92.5 8 L96 18 Z" fill="${wpn}"/>
+      <rect x="82" y="66" width="21" height="6" rx="2" fill="#A07B2E"/>
+      <rect x="89" y="72" width="7" height="12" rx="3" fill="#6B4F1D"/>
+    </g>
+  </svg>`;
+}
+const SP={
+  skeleton:(c,s)=>`<g><ellipse cx="60" cy="148" rx="32" ry="6" fill="#000" opacity=".45"/>
+    <circle cx="60" cy="32" r="20" fill="#D8D4C8" stroke="#5A564C" stroke-width="2"/>
+    <circle cx="53" cy="29" r="4.5" fill="#14161D"/><circle cx="68" cy="29" r="4.5" fill="${c||'#14161D'}"/>
+    <rect x="54" y="42" width="12" height="6" fill="#D8D4C8"/><rect x="55" y="42" width="2" height="6" fill="#5A564C"/><rect x="60" y="42" width="2" height="6" fill="#5A564C"/>
+    <rect x="56" y="50" width="8" height="40" rx="3" fill="#C8C4B8"/>
+    <rect x="42" y="56" width="36" height="5" rx="2" fill="#D8D4C8"/>
+    <rect x="44" y="66" width="32" height="5" rx="2" fill="#D8D4C8"/>
+    <rect x="46" y="76" width="28" height="5" rx="2" fill="#D8D4C8"/>
+    <rect x="38" y="56" width="6" height="34" rx="3" fill="#C8C4B8" transform="rotate(12 41 56)"/>
+    <rect x="78" y="56" width="6" height="34" rx="3" fill="#C8C4B8" transform="rotate(-18 81 56)"/>
+    <rect x="50" y="92" width="7" height="44" rx="3" fill="#C8C4B8"/>
+    <rect x="64" y="92" width="7" height="44" rx="3" fill="#C8C4B8"/>
+    <g transform="rotate(-22 88 60)"><rect x="85" y="34" width="5" height="52" rx="2" fill="#7A6B4E"/><path d="M82 34 L94 34 L88 22 Z" fill="#9AA0B0"/></g></g>`,
+  ghoul:(c)=>`<g><ellipse cx="60" cy="148" rx="34" ry="6" fill="#000" opacity=".45"/>
+    <path d="M30 140 Q24 70 60 56 Q96 70 90 140 Q60 152 30 140 Z" fill="${c||'#5E7A4A'}" stroke="#2E3D24" stroke-width="2.5"/>
+    <circle cx="48" cy="86" r="7" fill="#F0EDA0"/><circle cx="48" cy="86" r="3" fill="#14161D"/>
+    <circle cx="74" cy="84" r="9" fill="#F0EDA0"/><circle cx="74" cy="84" r="4" fill="#14161D"/>
+    <path d="M44 110 Q60 122 78 108" stroke="#2E3D24" stroke-width="3" fill="none"/>
+    <path d="M50 112 L52 120 L56 112 Z" fill="#E8E4D0"/><path d="M66 111 L68 119 L72 110 Z" fill="#E8E4D0"/>
+    <path d="M28 96 Q12 100 16 118 Q24 110 32 110 Z" fill="${c||'#5E7A4A'}" stroke="#2E3D24" stroke-width="2"/>
+    <path d="M92 94 Q108 98 104 116 Q96 108 88 108 Z" fill="${c||'#5E7A4A'}" stroke="#2E3D24" stroke-width="2"/></g>`,
+  rogue:(c)=>`<g><ellipse cx="60" cy="148" rx="30" ry="6" fill="#000" opacity=".45"/>
+    <path d="M40 44 Q60 8 80 44 L76 58 L44 58 Z" fill="${c||'#3D4252'}" stroke="#1C1F2A" stroke-width="2"/>
+    <ellipse cx="60" cy="44" rx="14" ry="10" fill="#14161D"/>
+    <circle cx="54" cy="43" r="3" fill="#E8A23C"/><circle cx="67" cy="43" r="3" fill="#E8A23C"/>
+    <path d="M44 58 L76 58 L82 110 L38 110 Z" fill="${c||'#3D4252'}" stroke="#1C1F2A" stroke-width="2"/>
+    <rect x="44" y="74" width="32" height="5" fill="#6B4F1D"/>
+    <rect x="44" y="110" width="12" height="30" rx="4" fill="#2A2E3A"/>
+    <rect x="64" y="110" width="12" height="30" rx="4" fill="#2A2E3A"/>
+    <g transform="rotate(-30 86 70)"><rect x="84" y="48" width="4" height="24" fill="#9AA0B0"/><path d="M82 48 L90 48 L86 38 Z" fill="#C8CDD8"/><rect x="80" y="72" width="12" height="4" fill="#6B4F1D"/></g></g>`,
+  wolf:(c)=>`<g><ellipse cx="62" cy="148" rx="38" ry="6" fill="#000" opacity=".45"/>
+    <path d="M20 110 Q18 76 50 72 L94 78 Q108 84 106 104 L102 140 L90 140 L88 116 L48 116 L44 140 L32 140 Z" fill="${c||'#5A5E6E'}" stroke="#2A2E3A" stroke-width="2.5"/>
+    <path d="M88 78 Q116 70 114 92 Q112 104 96 100 Z" fill="${c||'#5A5E6E'}" stroke="#2A2E3A" stroke-width="2.5"/>
+    <path d="M96 70 L100 56 L108 70 Z" fill="${c||'#5A5E6E'}" stroke="#2A2E3A" stroke-width="2"/>
+    <circle cx="103" cy="84" r="3.5" fill="#E8A23C"/>
+    <path d="M112 92 Q122 94 118 100 L108 98" fill="#3A3E4C"/>
+    <path d="M110 96 L114 99 M106 95 L110 99" stroke="#E8E4D0" stroke-width="2"/>
+    <path d="M22 108 Q4 102 8 86 Q16 96 26 96 Z" fill="${c||'#5A5E6E'}" stroke="#2A2E3A" stroke-width="2"/></g>`,
+  robed:(c)=>`<g><ellipse cx="60" cy="148" rx="32" ry="6" fill="#000" opacity=".45"/>
+    <path d="M36 140 Q34 60 60 30 Q86 60 84 140 Z" fill="${c||'#4A2E52'}" stroke="#241430" stroke-width="2.5"/>
+    <path d="M46 52 Q60 36 74 52 Q74 66 60 66 Q46 66 46 52 Z" fill="#14161D"/>
+    <circle cx="54" cy="54" r="3" fill="#A465E8"/><circle cx="66" cy="54" r="3" fill="#A465E8"/>
+    <rect x="86" y="40" width="5" height="100" rx="2" fill="#5C4A2E"/>
+    <circle cx="88.5" cy="36" r="8" fill="none" stroke="#A465E8" stroke-width="3"><animate attributeName="r" values="8;9.5;8" dur="2s" repeatCount="indefinite"/></circle>
+    <path d="M44 96 L76 96 M48 112 L72 112" stroke="#241430" stroke-width="2"/></g>`,
+  spider:(c)=>`<g><ellipse cx="60" cy="148" rx="40" ry="6" fill="#000" opacity=".45"/>
+    <ellipse cx="60" cy="100" rx="30" ry="24" fill="${c||'#3A3040'}" stroke="#1C1620" stroke-width="2.5"/>
+    <path d="M48 86 Q60 78 72 86 L72 96 Q60 90 48 96 Z" fill="#C9403A" opacity=".8"/>
+    <circle cx="60" cy="70" r="14" fill="${c||'#3A3040'}" stroke="#1C1620" stroke-width="2.5"/>
+    <circle cx="53" cy="67" r="3.5" fill="#C9403A"/><circle cx="67" cy="67" r="3.5" fill="#C9403A"/>
+    <circle cx="57" cy="74" r="2" fill="#C9403A"/><circle cx="63" cy="74" r="2" fill="#C9403A"/>
+    <path d="M34 92 Q10 78 6 56 M36 102 Q8 100 2 84 M40 112 Q14 120 10 138 M86 92 Q110 78 114 56 M84 102 Q112 100 118 84 M80 112 Q106 120 110 138" stroke="#1C1620" stroke-width="4" fill="none" stroke-linecap="round"/></g>`,
+  ghost:(c)=>`<g opacity=".88"><ellipse cx="60" cy="148" rx="26" ry="5" fill="#000" opacity=".3"/>
+    <path d="M32 130 Q28 50 60 38 Q92 50 88 130 Q80 122 74 132 Q68 122 60 132 Q52 122 46 132 Q40 122 32 130 Z" fill="${c||'#7E92B8'}" stroke="#3A4860" stroke-width="2" opacity=".85"/>
+    <circle cx="50" cy="74" r="5" fill="#14161D"/><circle cx="70" cy="74" r="5" fill="#14161D"/>
+    <ellipse cx="60" cy="94" rx="6" ry="9" fill="#14161D"/></g>`,
+  brute:(c)=>`<g><ellipse cx="60" cy="150" rx="40" ry="6" fill="#000" opacity=".45"/>
+    <rect x="42" y="22" width="36" height="30" rx="10" fill="${c||'#5E7A3E'}" stroke="#2C3A1C" stroke-width="2.5"/>
+    <circle cx="53" cy="34" r="4" fill="#C9403A"/><circle cx="68" cy="34" r="4" fill="#C9403A"/>
+    <path d="M48 46 L52 54 L56 46 M66 46 L70 54 L74 46" stroke="#E8E4D0" stroke-width="3" fill="none"/>
+    <path d="M34 52 L86 52 L94 110 L26 110 Z" fill="${c||'#5E7A3E'}" stroke="#2C3A1C" stroke-width="2.5"/>
+    <path d="M40 60 L80 60 L84 88 L36 88 Z" fill="#4A6230"/>
+    <rect x="18" y="56" width="16" height="44" rx="7" fill="${c||'#5E7A3E'}" stroke="#2C3A1C" stroke-width="2.5"/>
+    <rect x="86" y="56" width="16" height="44" rx="7" fill="${c||'#5E7A3E'}" stroke="#2C3A1C" stroke-width="2.5"/>
+    <rect x="36" y="110" width="18" height="32" rx="6" fill="#4A6230" stroke="#2C3A1C" stroke-width="2"/>
+    <rect x="66" y="110" width="18" height="32" rx="6" fill="#4A6230" stroke="#2C3A1C" stroke-width="2"/>
+    <g transform="rotate(24 100 80)"><rect x="97" y="30" width="8" height="60" rx="3" fill="#6B4F1D"/><path d="M91 30 Q101 14 111 30 L107 42 L95 42 Z" fill="#7A8290" stroke="#3A4150" stroke-width="2"/></g></g>`,
+  gargoyle:(c)=>`<g><ellipse cx="60" cy="148" rx="36" ry="6" fill="#000" opacity=".45"/>
+    <path d="M28 70 Q4 50 10 28 Q26 40 38 52 Z" fill="${c||'#6A6E7E'}" stroke="#34384A" stroke-width="2.5"/>
+    <path d="M92 70 Q116 50 110 28 Q94 40 82 52 Z" fill="${c||'#6A6E7E'}" stroke="#34384A" stroke-width="2.5"/>
+    <rect x="44" y="30" width="32" height="28" rx="9" fill="${c||'#6A6E7E'}" stroke="#34384A" stroke-width="2.5"/>
+    <path d="M46 30 L42 18 L52 26 M74 30 L78 18 L68 26" stroke="#34384A" stroke-width="3" fill="${c||'#6A6E7E'}"/>
+    <circle cx="54" cy="42" r="4" fill="#E8A23C"/><circle cx="67" cy="42" r="4" fill="#E8A23C"/>
+    <path d="M40 58 L80 58 L88 116 L32 116 Z" fill="${c||'#6A6E7E'}" stroke="#34384A" stroke-width="2.5"/>
+    <path d="M46 70 L74 70 M50 84 L70 84 M52 98 L68 98" stroke="#34384A" stroke-width="2"/>
+    <rect x="40" y="116" width="16" height="26" rx="5" fill="#565A6A" stroke="#34384A" stroke-width="2"/>
+    <rect x="64" y="116" width="16" height="26" rx="5" fill="#565A6A" stroke="#34384A" stroke-width="2"/></g>`,
+  devourer:(c)=>`<g><ellipse cx="60" cy="150" rx="44" ry="7" fill="#000" opacity=".5"/>
+    <path d="M40 30 L28 4 L48 22 M80 30 L92 4 L72 22" stroke="#4A0E0E" stroke-width="4" fill="#8A1E1E"/>
+    <path d="M34 28 Q60 8 86 28 L92 62 Q60 78 28 62 Z" fill="${c||'#8A1E1E'}" stroke="#3A0808" stroke-width="3"/>
+    <path d="M44 38 L56 44 L44 48 Z" fill="#FFD23C"/><path d="M76 38 L64 44 L76 48 Z" fill="#FFD23C"/>
+    <path d="M42 58 L50 70 L58 58 L66 70 L74 58 L80 68" stroke="#F0EDE4" stroke-width="3.5" fill="none"/>
+    <path d="M30 62 L90 62 L100 130 L20 130 Z" fill="#6E1616" stroke="#3A0808" stroke-width="3"/>
+    <circle cx="60" cy="92" r="10" fill="#FFD23C"><animate attributeName="opacity" values="1;.4;1" dur="1.2s" repeatCount="indefinite"/></circle>
+    <path d="M12 66 Q-4 84 8 104 L26 92 Z" fill="#8A1E1E" stroke="#3A0808" stroke-width="2.5"/>
+    <path d="M108 66 Q124 84 112 104 L94 92 Z" fill="#8A1E1E" stroke="#3A0808" stroke-width="2.5"/>
+    <rect x="32" y="130" width="22" height="16" rx="5" fill="#4A0E0E"/>
+    <rect x="66" y="130" width="22" height="16" rx="5" fill="#4A0E0E"/></g>`
+};
+function enemySVG(){
+  const big=E.jefe?1.35:1;
+  const w=Math.round(120*big),h=Math.round(155*big);
+  const crown=E.jefe&&E.sp!=='devourer'?`<path d="M44 14 L48 2 L56 12 L62 0 L68 12 L76 2 L80 14 Z" fill="#FFD23C" stroke="#A07B2E" stroke-width="1.5"/>`:'';
+  return `<svg width="${w}" height="${h}" viewBox="0 0 120 155" role="img" aria-label="${E.n}"><g transform="scale(-1,1) translate(-120,0)">${SP[E.sp]()}</g>${crown}</svg>`;
+}
+
+/* ---------- juego ---------- */
+function nuevaRun(){
+  runs++;
+  P={piso:1,idx:0,hpMax:100+meta.hp,hp:100+meta.hp,atk:10+meta.atk,def:meta.def,
+     crit:5+meta.crit,vamp:meta.vamp,oro:0,poc:1,arma:null,armadura:null,amuleto:null};
+  kills=0;logArr=[];busy=false;
+  log('Corrida #'+runs+' — descendés al abismo.');
+  spawn();cerrarModal();renderAll();guardar();
+}
+const totATK=()=>P.atk+(P.arma?P.arma.v:0);
+const totDEF=()=>P.def+(P.armadura?P.armadura.v:0);
+const totCRIT=()=>Math.min(60,P.crit+(P.amuleto&&P.amuleto.sub==='crit'?P.amuleto.v:0));
+const totVAMP=()=>Math.min(40,P.vamp+(P.amuleto&&P.amuleto.sub==='vamp'?P.amuleto.v:0));
+const esJefe=()=>P.piso%5===0&&P.idx===4;
+
+function spawn(){
+  const p=P.piso,jefe=esJefe();
+  const base=jefe?(p===PISO_FINAL?JEFES[4]:JEFES[(p/5-1)%4]):ENE[RI(0,ENE.length-1)];
+  E={n:base.n,sp:base.sp,jefe,
+     hpMax:Math.round(28*Math.pow(1.17,p-1)*(jefe?3.2:R(.85,1.15))),
+     atk:Math.round(6*Math.pow(1.135,p-1)*(jefe?1.7:R(.9,1.1)))};
+  E.hp=E.hpMax;
+  if(jefe)log('⚠ ¡JEFE! '+E.n+' bloquea el camino.');
+  $('sp-enemy').innerHTML=enemySVG();
+}
+function log(m){logArr.unshift(m);if(logArr.length>6)logArr.pop();$('log').innerHTML=logArr.map(l=>'<div>'+l+'</div>').join('')}
+
+function flota(side,txt,cls){
+  const f=$(side);const d=document.createElement('div');
+  d.className='dmg '+cls;d.textContent=txt;f.appendChild(d);
+  setTimeout(()=>d.remove(),900);
+}
+function anim(el,cls,ms){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);setTimeout(()=>el.classList.remove(cls),ms)}
+
+function atacar(){
+  if(busy)return;busy=true;
+  anim($('f-player'),'atkR',320);
+  setTimeout(()=>{
+    const crit=Math.random()*100<totCRIT();
+    const d=Math.round(totATK()*R(.9,1.15)*(crit?2:1));
+    E.hp-=d;
+    anim($('f-enemy'),'hit',260);
+    flota('f-enemy','-'+F(d),crit?'crit':'norm');
+    const cura=Math.round(d*totVAMP()/100);
+    if(cura>0){P.hp=Math.min(P.hpMax,P.hp+cura);flota('f-player','+'+cura,'heal')}
+    log((crit?'¡CRÍTICO! ':'')+'Golpeás a '+E.n+' por '+F(d)+(cura?' y robás '+cura+' HP':'')+'.');
+    renderCombat();
+    if(E.hp<=0){
+      anim($('f-enemy'),'dying',500);
+      setTimeout(matar,480);return;
+    }
+    setTimeout(()=>{
+      anim($('f-enemy'),'atkL',320);
+      setTimeout(()=>{
+        const ed=Math.max(1,Math.round(E.atk*R(.85,1.1)-totDEF()));
+        P.hp-=ed;
+        anim($('f-player'),'hit',260);
+        flota('f-player','-'+F(ed),'recv');
+        log(E.n+' te golpea por '+F(ed)+'.');
+        renderCombat();
+        if(P.hp<=0){morir();return}
+        busy=false;
+      },170);
+    },240);
+  },170);
+}
+function pocion(){
+  if(busy||P.poc<1)return;
+  P.poc--;const c=Math.round(P.hpMax*.5);
+  P.hp=Math.min(P.hpMax,P.hp+c);
+  flota('f-player','+'+F(c),'heal');
+  log('Bebés una poción y recuperás la mitad de tu vida.');
+  renderCombat();
+}
+function pocCosto(){return 25+P.piso*6}
+function comprarPoc(){
+  if(busy||P.oro<pocCosto())return;
+  P.oro-=pocCosto();P.poc++;
+  log('Comprás una poción por '+F(pocCosto())+' de oro.');
+  renderCombat();
+}
+function matar(){
+  kills++;
+  const g=Math.round((6+P.piso*5)*(E.jefe?4:1)*(1+meta.oro/100)*R(.8,1.2));
+  P.oro+=g;
+  flota('f-enemy','+'+F(g)+' oro','crit');
+  log(E.n+' cae. Saqueás '+F(g)+' de oro del cadáver.');
+  if(E.jefe&&P.piso===PISO_FINAL){victoria();return}
+  if(E.jefe||Math.random()<.30){pendLoot=genLoot(E.jefe);setTimeout(mostrarLoot,350);return}
+  setTimeout(avanzar,300);
+}
+function avanzar(){
+  P.idx++;
+  if(P.idx>4){
+    P.piso++;P.idx=0;
+    const c=Math.round(P.hpMax*.25);
+    P.hp=Math.min(P.hpMax,P.hp+c);
+    log('— Piso '+P.piso+' — Recuperás el aliento (+'+F(c)+' HP).');
+  }
+  spawn();busy=false;renderAll();
+}
+function genLoot(jefe){
+  let r=Math.random()+(jefe?.3:0),ri=3,ac=0;
+  for(let i=0;i<4;i++){ac+=RAR[i].p;if(r<=ac){ri=i;break}}
+  if(jefe&&ri<2)ri=2;
+  const tipos=['arma','armadura','amuleto'],t=tipos[RI(0,2)];
+  const base=t==='arma'?4+P.piso*2.2:t==='armadura'?2+P.piso*1.3:6+P.piso*1.2;
+  const it={tipo:t,rar:ri,n:NOM[t][RI(0,4)]+' '+ADJ[RI(0,ADJ.length-1)],v:Math.round(base*RAR[ri].m*R(.9,1.1))};
+  if(t==='amuleto')it.sub=Math.random()<.5?'crit':'vamp';
+  return it;
+}
+const descIt=it=>!it?null:(it.tipo==='arma'?'+'+it.v+' ATK':it.tipo==='armadura'?'+'+it.v+' DEF':'+'+it.v+'% '+(it.sub==='crit'?'crítico':'robo de vida'));
+const ventaIt=it=>Math.round(it.v*8*RAR[it.rar].m);
+
+function mostrarLoot(){
+  const it=pendLoot,act=P[it.tipo];
+  abrirModal(`
+    <h2>BOTÍN DEL CADÁVER</h2>
+    <span class="rar r-${it.rar}">${RAR[it.rar].n}</span>
+    <div class="itname" style="color:${RARCOL[it.rar]}">${it.n}</div>
+    <div class="itstat">${descIt(it)}</div>
+    <div class="cur">Equipado: ${act?act.n+' ('+descIt(act)+')':'nada'}</div>
+    <div class="mrow">
+      <button class="main" onclick="equipar()">Equipar</button>
+      <button onclick="vender()">Vender · ${F(ventaIt(it))} oro</button>
+    </div>`);
+}
+function equipar(){
+  const it=pendLoot;
+  if(P[it.tipo])P.oro+=Math.round(ventaIt(P[it.tipo])*.5);
+  P[it.tipo]=it;
+  log('Equipás '+it.n+' ('+RAR[it.rar].n+'). El equipo viejo se vende solo.');
+  pendLoot=null;cerrarModal();avanzar();
+}
+function vender(){
+  P.oro+=ventaIt(pendLoot);
+  log('Vendés el botín por '+F(ventaIt(pendLoot))+' de oro.');
+  pendLoot=null;cerrarModal();avanzar();
+}
+
+function morir(){
+  busy=true;
+  anim($('f-player'),'dying',500);
+  const g=Math.round(P.piso*9+kills*2+P.oro*.06);
+  almas+=g;
+  if(P.piso>mejor)mejor=P.piso;
+  guardar();
+  setTimeout(()=>abrirModal(metaHTML('☠ CAÍSTE EN EL PISO '+P.piso,
+    kills+' enemigos eliminados · Récord: piso '+mejor,g,'Descender de nuevo')),600);
+}
+function victoria(){
+  busy=true;almas+=300;mejor=PISO_FINAL;guardar();
+  setTimeout(()=>abrirModal(metaHTML('♛ VICTORIA','Derrotaste a EL DEVORADOR en el piso '+PISO_FINAL+'. '+kills+' enemigos cayeron ante vos.',300,'Nueva partida+')),500);
+}
+const costo=k=>Math.round(20*Math.pow(1.6,lvl[k]));
+function metaHTML(titulo,sub,ganadas,btn){
+  return `
+    <div class="${titulo.includes('VICTORIA')?'bigwin':'bigdeath'}">${titulo}</div>
+    <div class="cur" style="margin-top:6px">${sub}</div>
+    <div class="souls-earned">+${F(ganadas)} almas recolectadas · Total: ${F(almas)}</div>
+    <div class="meta-grid">
+      ${META.map(m=>`
+      <div class="meta-card">
+        <h4>${m.n} <em>nv ${lvl[m.k]}</em></h4>
+        <p>${m.d}</p>
+        <button onclick="comprar('${m.k}')" ${almas<costo(m.k)?'disabled':''}>${F(costo(m.k))} almas</button>
+      </div>`).join('')}
+    </div>
+    <div class="mrow"><button class="main" onclick="nuevaRun()" style="width:100%">${btn}</button></div>`;
+}
+function comprar(k){
+  if(almas<costo(k))return;
+  almas-=costo(k);
+  meta[k]+=META.find(m=>m.k===k).v;
+  lvl[k]++;guardar();
+  const t=$('modal').querySelector('.bigdeath,.bigwin');
+  abrirModal(metaHTML(t.textContent,'Mejora adquirida. El abismo te espera.',0,'Descender de nuevo')
+    .replace('+0 almas recolectadas · ',''));
+  renderAll();
+}
+function abrirModal(html){$('modal').innerHTML=html;$('overlay').style.display='flex'}
+function cerrarModal(){$('overlay').style.display='none'}
+
+/* ---------- render ---------- */
+function renderCombat(){
+  $('h-piso').textContent=P.piso;
+  $('h-oro').textContent=F(P.oro);
+  $('h-almas').textContent=F(almas);
+  $('p-bar').style.width=Math.max(0,P.hp/P.hpMax*100)+'%';
+  $('p-hpv').textContent=F(Math.max(0,P.hp))+' / '+F(P.hpMax);
+  $('e-bar').style.width=Math.max(0,E.hp/E.hpMax*100)+'%';
+  $('e-hpv').textContent=F(Math.max(0,E.hp))+' / '+F(E.hpMax);
+  $('poc-n').textContent=P.poc;
+  $('poc-c').textContent=F(pocCosto());
+  $('b-poc').disabled=P.poc<1;
+  $('b-buy').disabled=P.oro<pocCosto();
+  $('st-kills').textContent=kills;
+}
+function renderAll(){
+  $('h-run').textContent=runs;
+  $('h-best').textContent=mejor>0?'piso '+mejor:'—';
+  $('sp-player').innerHTML=knightSVG();
+  $('e-name').textContent=E.n;
+  $('e-name').className='nm'+(E.jefe?' boss-n':'');
+  $('e-tag').textContent=(E.jefe?'JEFE · ':'Enemigo '+(P.idx+1)+'/5 · ')+'ATK '+F(E.atk);
+  $('p-tag').textContent='Caballero del abismo';
+  $('arena').className='arena'+(E.jefe?' boss':'');
+  const slots={arma:'⚔',armadura:'🛡',amuleto:'◆'};
+  for(const t of ['arma','armadura','amuleto']){
+    const it=P[t],el=$('sl-'+t);
+    el.className='slot'+(it?' b-'+it.rar:'');
+    el.innerHTML=`<span class="ic">${slots[t]}</span>`+(it
+      ?`<span><b style="color:${RARCOL[it.rar]}">${it.n}</b><br><small style="color:var(--mut)">${RAR[it.rar].n} · ${descIt(it)}</small></span>`
+      :`<span class="empty">Sin ${t}</span>`);
+  }
+  $('st-atk').textContent=F(totATK());
+  $('st-def').textContent=F(totDEF());
+  $('st-crit').textContent=totCRIT()+'%';
+  $('st-vamp').textContent=totVAMP()+'%';
+  renderCombat();
+}
+
+/* ---------- inicio ---------- */
+cargar();
+nuevaRun();
+</script>
+</body>
+</html>
