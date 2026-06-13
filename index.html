@@ -469,6 +469,17 @@ function checkMisiones(){
 /* ================= estado de partida ================= */
 let P,piso,quota,killsPiso,killsTotal,oroRun,nivel,xp,xpNeed,ups,enemigos,gemas,monedas,balas,parts,textos,rings,portal,boss,state,shake,combo,comboT,tiempo,hintT,mod;
 let rage,rageMax,synActivas,cofres,trail,shield;
+let sangre,ambient;
+const BIOMAS=[
+  {n:'La Cripta',       bg:'#0B0C11',tile:'#12141C',line:'#1A1D28',fog:'#0B0C1180',accent:'#2A3040'},
+  {n:'Catacumbas',      bg:'#0E0A08',tile:'#16120E',line:'#221C14',fog:'#0E0A0880',accent:'#3A2A18'},
+  {n:'Campo de Huesos', bg:'#0C0D0A',tile:'#14160E',line:'#1E2216',fog:'#0C0D0A80',accent:'#2A3020'},
+  {n:'Santuario Sangriento',bg:'#100808',tile:'#1A0E0E',line:'#2A1414',fog:'#10080880',accent:'#3A1818'},
+  {n:'El Abismo',       bg:'#06040A',tile:'#0E0A14',line:'#1A1228',fog:'#06040A90',accent:'#1E1436'}
+];
+const bioma=()=>BIOMAS[Math.min(4,Math.floor((piso-1)/5))];
+function hash(x,y){let h=Math.sin(x*127.1+y*311.7)*43758.5453;return h-Math.floor(h)}
+function hash2(x,y){let h=Math.sin(x*269.5+y*183.3)*43758.5453;return h-Math.floor(h)}
 
 function nuevaRun(){
   runs++;
@@ -484,6 +495,7 @@ function nuevaRun(){
   enemigos=[];gemas=[];monedas=[];balas=[];parts=[];textos=[];rings=[];
   portal=null;boss=null;state='run';shake=0;combo=0;comboT=0;tiempo=0;hintT=6;mod=null;
   rage=0;rageMax=50;synActivas=[];cofres=[];trail=[];shield=0;
+  sangre=[];ambient=[];
   quota=quotaPiso();
   spawnT=0;
   cerrar();guardar();renderHUD();
@@ -622,6 +634,12 @@ function golpear(e,d,crit){
 function matar(e){
   chispa(e.x,e.y,e.col,e.jefe?40:10);
   sfxKill();
+  /* sangre persistente */
+  const nSplat=e.jefe?5:RI(1,3);
+  for(let i=0;i<nSplat;i++){
+    sangre.push({x:e.x+R(-18,18),y:e.y+R(-18,18),r:R(6,e.jefe?28:15),a:R(0,6.28),op:R(.15,.35)});
+  }
+  if(sangre.length>120)sangre.splice(0,sangre.length-120);
   dropear(e);
   killsTotal++;combo++;comboT=2;
   gstats.kills++;
@@ -676,6 +694,12 @@ function elegir(k){
 function siguientePiso(){
   sfxPort();
   piso++;killsPiso=0;quota=quotaPiso();portal=null;cofres.length=0;
+  const newBi=Math.min(4,Math.floor((piso-1)/5));
+  const oldBi=Math.min(4,Math.floor((piso-2)/5));
+  if(newBi!==oldBi){
+    sangre.length=0;ambient.length=0;
+    texto(P.x,P.y-90,'☠ '+BIOMAS[newBi].n.toUpperCase()+' ☠','#E8B33C',24);
+  }
   mod=(piso%5!==0&&Math.random()<.55)?MODS[RI(0,MODS.length-1)]:null;
   if(mod){texto(P.x,P.y-86,'◆ '+mod.n,'#8B7CF0',19)}
   P.hp=Math.min(P.hpMax,P.hp+P.hpMax*.3);
@@ -1081,23 +1105,158 @@ function update(dt){
 
 /* ================= dibujo ================= */
 function draw(){
-  ctx.fillStyle='#0B0C11';ctx.fillRect(0,0,W,H);
+  const B=bioma();
+  ctx.fillStyle=B.bg;ctx.fillRect(0,0,W,H);
   const camx=P.x-W/2+(shake?R(-shake,shake):0);
   const camy=P.y-H/2+(shake?R(-shake,shake):0);
   ctx.save();ctx.translate(-camx,-camy);
-  /* piso: grilla + piedras */
-  const gs=90;
-  ctx.strokeStyle='#15171F';ctx.lineWidth=1;
-  const x0=Math.floor(camx/gs)*gs,y0=Math.floor(camy/gs)*gs;
-  ctx.beginPath();
-  for(let x=x0;x<camx+W+gs;x+=gs){ctx.moveTo(x,camy);ctx.lineTo(x,camy+H)}
-  for(let y=y0;y<camy+H+gs;y+=gs){ctx.moveTo(camx,y);ctx.lineTo(camx+W,y)}
-  ctx.stroke();
-  for(let x=x0;x<camx+W+gs;x+=gs)for(let y=y0;y<camy+H+gs;y+=gs){
-    const h=Math.abs(Math.sin(x*12.9898+y*78.233)*43758.5)%1;
-    if(h<.07){ctx.fillStyle='#181B26';
-      ctx.beginPath();ctx.ellipse(x+h*900%gs,y+h*1300%gs,7+h*30,5+h*20,h*3,0,6.283);ctx.fill()}
+
+  /* ===== PISO PROCEDURAL ===== */
+  const gs=80;
+  const x0=Math.floor(camx/gs)*gs-gs,y0=Math.floor(camy/gs)*gs-gs;
+  const bi=Math.min(4,Math.floor((piso-1)/5));
+
+  /* baldosas con variación */
+  for(let gx=x0;gx<camx+W+gs*2;gx+=gs)for(let gy=y0;gy<camy+H+gs*2;gy+=gs){
+    const cx=Math.floor(gx/gs),cy=Math.floor(gy/gs);
+    const h=hash(cx,cy);
+    const bright=h*.04;
+    ctx.fillStyle=B.tile;ctx.globalAlpha=.6+bright;
+    ctx.fillRect(gx,gy,gs-1,gs-1);
+    ctx.globalAlpha=1;
+    /* grieta fina aleatoria */
+    if(h>.82){
+      ctx.strokeStyle=B.line;ctx.lineWidth=1;ctx.globalAlpha=.5;
+      ctx.beginPath();
+      const sx=gx+h*60,sy=gy+hash2(cx,cy)*60;
+      ctx.moveTo(sx,sy);
+      ctx.lineTo(sx+R(-22,22),sy+R(-22,22));
+      ctx.lineTo(sx+R(-30,30),sy+R(-30,30));
+      ctx.stroke();ctx.globalAlpha=1;
+    }
   }
+  /* juntas */
+  ctx.strokeStyle=B.line;ctx.lineWidth=1;ctx.globalAlpha=.35;
+  ctx.beginPath();
+  for(let x=x0;x<camx+W+gs*2;x+=gs){ctx.moveTo(x,camy-gs);ctx.lineTo(x,camy+H+gs)}
+  for(let y=y0;y<camy+H+gs*2;y+=gs){ctx.moveTo(camx-gs,y);ctx.lineTo(camx+W+gs,y)}
+  ctx.stroke();ctx.globalAlpha=1;
+
+  /* ===== DECORACIONES PROCEDURALES ===== */
+  const dgs=160;
+  const dx0=Math.floor(camx/dgs)*dgs-dgs,dy0=Math.floor(camy/dgs)*dgs-dgs;
+  for(let gx=dx0;gx<camx+W+dgs*2;gx+=dgs)for(let gy=dy0;gy<camy+H+dgs*2;gy+=dgs){
+    const cx=Math.floor(gx/dgs),cy=Math.floor(gy/dgs);
+    const h=hash(cx*7+3,cy*13+7);
+    const px=gx+h*120,py=gy+hash2(cx,cy)*120;
+
+    if(h<.10){
+      /* CALAVERA */
+      ctx.globalAlpha=.18+h*.3;
+      ctx.fillStyle='#C8C0B0';
+      ctx.beginPath();ctx.arc(px,py,6+h*4,0,6.283);ctx.fill();
+      ctx.fillStyle=B.bg;
+      ctx.beginPath();ctx.arc(px-2.5,py-1,1.5,0,6.283);ctx.fill();
+      ctx.beginPath();ctx.arc(px+2.5,py-1,1.5,0,6.283);ctx.fill();
+      ctx.fillRect(px-2,py+2.5,1,2);ctx.fillRect(px+1,py+2.5,1,2);
+      ctx.globalAlpha=1;
+    } else if(h<.18){
+      /* HUESOS cruzados */
+      ctx.globalAlpha=.14;
+      ctx.strokeStyle='#A8A090';ctx.lineWidth=2.5;ctx.lineCap='round';
+      const a=h*3;
+      ctx.save();ctx.translate(px,py);ctx.rotate(a);
+      ctx.beginPath();ctx.moveTo(-10,-8);ctx.lineTo(10,8);ctx.moveTo(-10,8);ctx.lineTo(10,-8);ctx.stroke();
+      /* cabezas de hueso */
+      ctx.fillStyle='#A8A090';
+      [[-10,-8],[10,8],[-10,8],[10,-8]].forEach(([bx,by])=>{ctx.beginPath();ctx.arc(bx,by,2.5,0,6.283);ctx.fill()});
+      ctx.restore();ctx.lineCap='butt';ctx.globalAlpha=1;
+    } else if(h<.24&&bi>=1){
+      /* LÁPIDA */
+      ctx.globalAlpha=.2;
+      ctx.fillStyle='#4A4E5A';
+      ctx.beginPath();
+      ctx.moveTo(px-8,py+10);ctx.lineTo(px-8,py-6);
+      ctx.quadraticCurveTo(px,py-16,px+8,py-6);
+      ctx.lineTo(px+8,py+10);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#2A2E38';ctx.lineWidth=1.5;ctx.stroke();
+      /* cruz */
+      ctx.strokeStyle='#6A6E78';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(px,py-10);ctx.lineTo(px,py+2);
+      ctx.moveTo(px-4,py-5);ctx.lineTo(px+4,py-5);ctx.stroke();
+      ctx.globalAlpha=1;
+    } else if(h<.30&&bi>=2){
+      /* CHARCO DE SANGRE */
+      ctx.globalAlpha=.12;
+      ctx.fillStyle='#4A1010';
+      ctx.beginPath();ctx.ellipse(px,py,14+h*10,8+h*6,h*2,0,6.283);ctx.fill();
+      ctx.fillStyle='#5A1818';
+      ctx.beginPath();ctx.ellipse(px+3,py-2,6+h*4,4+h*3,h*4,0,6.283);ctx.fill();
+      ctx.globalAlpha=1;
+    } else if(h<.34&&bi>=3){
+      /* VELA encendida */
+      ctx.globalAlpha=.3;
+      ctx.fillStyle='#A0946E';ctx.fillRect(px-2,py,4,10);
+      /* llama */
+      const flk=Math.sin(tiempo*8+h*20)*2;
+      ctx.fillStyle='#E8A23C';
+      ctx.beginPath();ctx.moveTo(px-3,py);ctx.quadraticCurveTo(px+flk,py-10,px+3,py);ctx.fill();
+      ctx.fillStyle='#FFE080';
+      ctx.beginPath();ctx.moveTo(px-1.5,py);ctx.quadraticCurveTo(px+flk*.5,py-6,px+1.5,py);ctx.fill();
+      /* resplandor */
+      ctx.fillStyle='#E8A23C08';ctx.beginPath();ctx.arc(px,py-4,25+Math.sin(tiempo*6)*5,0,6.283);ctx.fill();
+      ctx.globalAlpha=1;
+    } else if(h<.38){
+      /* PIEDRA irregular */
+      ctx.globalAlpha=.15;ctx.fillStyle=B.accent;
+      ctx.beginPath();ctx.ellipse(px,py,8+h*14,5+h*8,h*5,0,6.283);ctx.fill();
+      ctx.globalAlpha=1;
+    } else if(h<.41&&bi>=1){
+      /* CADENAS rotas */
+      ctx.globalAlpha=.13;ctx.strokeStyle='#6A6A7A';ctx.lineWidth=2;
+      ctx.beginPath();
+      for(let i=0;i<5;i++){
+        ctx.arc(px-10+i*5,py+(i%2)*3,2.5,0,6.283);
+      }
+      ctx.stroke();
+      /* eslabón roto */
+      ctx.strokeStyle='#8A3020';ctx.beginPath();
+      ctx.arc(px+18,py+4,3,0,4);ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+  }
+
+  /* ===== SANGRE PERSISTENTE (kills) ===== */
+  for(const sp of sangre){
+    ctx.globalAlpha=sp.op;
+    ctx.fillStyle=bi>=3?'#5A1414':'#3A1010';
+    ctx.save();ctx.translate(sp.x,sp.y);ctx.rotate(sp.a);
+    ctx.beginPath();ctx.ellipse(0,0,sp.r,sp.r*.6,0,0,6.283);ctx.fill();
+    if(sp.r>12){
+      ctx.fillStyle=bi>=3?'#6A1818':'#4A1212';
+      ctx.beginPath();ctx.ellipse(sp.r*.3,-sp.r*.2,sp.r*.4,sp.r*.25,.5,0,6.283);ctx.fill();
+    }
+    ctx.restore();
+    ctx.globalAlpha=1;
+  }
+
+  /* ===== PARTÍCULAS AMBIENTALES ===== */
+  if(ambient.length<30){
+    const ax=camx+R(0,W),ay=camy+R(0,H);
+    ambient.push({x:ax,y:ay,vx:R(-.3,.3),vy:R(-12,-30),life:R(3,7),
+      r:R(.8,2.2),col:bi>=3?'#D44A42':bi>=2?'#8A8060':'#6A7A9A'});
+  }
+  for(let i=ambient.length-1;i>=0;i--){
+    const a=ambient[i];
+    a.x+=a.vx+Math.sin(tiempo*2+i)*.3;a.y+=a.vy*.016;
+    a.life-=.016;
+    if(a.life<=0||a.x<camx-40||a.x>camx+W+40||a.y<camy-40){
+      ambient.splice(i,1);continue;
+    }
+    ctx.globalAlpha=Math.min(.35,a.life*.15);
+    ctx.fillStyle=a.col;ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,6.283);ctx.fill();
+  }
+  ctx.globalAlpha=1;
   /* portal */
   if(portal){
     const pu=portal.t*4;
@@ -1199,6 +1358,19 @@ function draw(){
     ctx.fillStyle=t.col;ctx.fillText(t.t,t.x,t.y)}
   ctx.globalAlpha=1;
   ctx.restore();
+
+  /* ===== FOG + VIGNETTE (screen-space) ===== */
+  const B2=bioma();
+  /* niebla baja */
+  const fogGrad=ctx.createLinearGradient(0,H*.55,0,H);
+  fogGrad.addColorStop(0,'transparent');
+  fogGrad.addColorStop(1,B2.fog);
+  ctx.fillStyle=fogGrad;ctx.fillRect(0,0,W,H);
+  /* viñeta */
+  const vig=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.25,W/2,H/2,Math.max(W,H)*.75);
+  vig.addColorStop(0,'transparent');
+  vig.addColorStop(1,B2.bg+'cc');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
 }
 function drawJugador(){
   const x=P.x,y=P.y,d=P.dir,t=tiempo;
@@ -1529,7 +1701,7 @@ function renderHUD(){
   $('h-oro').textContent=F(oroRun);
   $('h-almas').textContent=F(almas);
   $('h-best').textContent=mejor>0?'piso '+mejor:'—';
-  $('quota').firstElementChild.textContent='PISO '+piso+(piso%5===0?' · JEFE':'');
+  $('quota').firstElementChild.textContent='PISO '+piso+(piso%5===0?' · JEFE':' · '+bioma().n);
   $('qsub').textContent=portal?'¡Entrá al portal!':(piso%5===0?(boss?'Derrotá al jefe':'…'):killsPiso+' / '+quota+' enemigos');
   $('modline').textContent=mod?'◆ '+mod.n+' — '+mod.d:'';
   const c=$('combo');
