@@ -180,7 +180,7 @@ button.main:hover:not(:disabled){background:#4A3C18}
     <div class="hr">
       <div class="g">⛁ <b id="h-oro">0</b></div>
       <div class="s">✦ <b id="h-almas">0</b></div>
-      <div style="color:var(--mut)">Récord <b id="h-best">—</b></div>
+      <div style="color:var(--mut)"><span id="h-rec-label">Récord</span> <b id="h-best">—</b></div>
     </div>
   </div>
 </div>
@@ -192,7 +192,7 @@ button.main:hover:not(:disabled){background:#4A3C18}
 <button id="superbtn" aria-label="Ira del Abismo">🔥</button>
 <button id="mute" aria-label="Silenciar sonido">🔊</button>
 <button id="pausebtn" aria-label="Pausa">⏸</button>
-<div id="hint"><span class="kbd">WASD</span> moverte · <span class="kbd">Espacio</span> dash · <span class="kbd">Q</span> super · en el celu: joystick + ⚡ y 🔥</div>
+<div id="hint"><span class="kbd">WASD</span> L('moverte','move')+' · <span class="kbd">Espacio</span> dash · <span class="kbd">Q</span> super · en el celu: joystick + ⚡ y 🔥</div>
 <div id="overlay" class="overlay" style="display:none"><div class="modal" id="modal"></div></div>
 
 <!-- Ad overlay (se muestra entre pisos y al morir) -->
@@ -208,11 +208,16 @@ button.main:hover:not(:disabled){background:#4A3C18}
 
 <script>
 'use strict';
+/* ================= idioma automático ================= */
+const LANG=(navigator.language||'es').slice(0,2)==='es'?'es':'en';
+const L=(es,en)=>LANG==='es'?es:en;
 /* ================= utilidades ================= */
 const $=id=>document.getElementById(id);
 const R=(a,b)=>a+Math.random()*(b-a);
 const RI=(a,b)=>Math.floor(R(a,b+1));
-const F=n=>Math.round(n).toLocaleString('es-AR');
+const ES=!navigator.language||navigator.language.startsWith('es');
+const LOCALE=ES?'es-AR':'en-US';
+const F=n=>Math.round(n).toLocaleString(LOCALE);
 const dist2=(a,b)=>{const dx=a.x-b.x,dy=a.y-b.y;return dx*dx+dy*dy};
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},
              set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
@@ -294,6 +299,28 @@ function buildMage(){
 SPRITES.ki=buildKnight(false);
 SPRITES.kw=buildKnight(true);
 SPRITES.mi=buildMage();
+
+/* ================= enemy sprites ================= */
+const ESPR={};
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAQCAYAAACm53kpAAABFUlEQVR4nO2VMQ6CQBBFP8bG0FNaDCWUWNJQkXgAT+AdvICH4QAklia0lLSuiaWtscZqlQ3LMgTCxoTfzYfZv/MCu8CiRYsWdYiIaiKq+7x/1qrrARHVsRv1eibZBsjJbwGYatO2AXLz17rmS+ghrZ5KDUDxTMEcj7NO7EYo3qXRG5uvBQDIoR8APMVLqxJCCMe0edsAh+R3AgAAP8sBALfD/lcHO/YmbAAcmm8EMFa2AA7J77wFAOAYJjiGiVLPKT/Lv0PIemoZv4BTsGnV1+rFXlwCk+vMDZCTrwVwvm8BQDltf9cH/z+0DZCTrwVQvMvvwEIIh4jqptcn2wCH5GsPk+a1Iw8cndfXK9/Vedx+nabM/wCk7tCHER17ZwAAAABJRU5ErkJggg==';ESPR['imp']={img:i,w:16,h:16,n:4}})();
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAAAkCAYAAABBszIzAAADgUlEQVR4nO2av2vjMBTHX4+DZs3QsYvAQ0ajLXOhHboGjv4LN5cWMh9c6dx/oRSydmihczbjMXAGLx3uIENWZ/IN4RlZsfXL+pG2+kAwViQ/Se/73lPdAEQikUgkEolEIpFIJBKJRL4ER6YDCSF133dlWRo/d+gcfNn+LHw3GUQIqSe/kuZ+NS/g+uUUnrPRrmEOtWtHsHNo2fdg+zOhvVG48Ze0arXfX7zD9ctp696VI7rmwNp3aZufB9/20cSnnQHKsjyCOdTAZIBLWsEuGncO8eUAzDi8fR+EzkC2SrBRBtDp7zoL8KzmhXPxhc5AshKsswdGZ4DZlAJNE8jyQthvscxMHq9Ek4m62j0RIgNhAK7m7b2/v3jv7CfbDyMBIDRN4Pbhqbn//fMHAECrzSWh6i2KD6MQhfCcjbxkIJsBqCUA3fSPY2xuyKGUoEPIQDYCUFkAhJB6NqV7qppN6V5fts1FGQhZgmQC5L8PKX4cI5qDkgDQ+V3QdP8gxrbZdAK/AaFKUAgBugrAb6qGAdqOzfIC7h5fAQCkVxuIRCgbZ3MO7D1NE1gss+ZD06TVZtOuKADxI2rrQyoA9qEILu5sQgAA4ObqXHgdimgDZlPafERtLucgG2fLrosAFJYANM4a5tOQKA0ultngGshvAB9ZPkqQTICiNluZgF/TbEqVAlBWDpXOAFleNBNwkeJU4B2d5QW8rUq4uTqHu8fX3utQQgrQRwBqvwfI8gK6UhLfp5kEmL8a7doAALsRoEooAaItVwEodEyfA3S4fXgyLgNd9S/Li0YAMoaWoK71o6BkQcD2t71+RCkAJXugXQL6QNX7QjUCbLyIwg2laaKdgm3An/B1+svmoFwCZCJw6fyuP3F4+gRoowTw9n2fgVwGoFQA7EJ9H/wQNgL7cClA3gH4won9/m1VwtmE7M3R1hnEVQBKBTAej40ejGw2m0HjD0GAAGIHqL50McH1+qUCGOrAoXx1Abpev1YGOBkdw7rawsnoWHkCf/7+U+7bRSgBEkLqoZvPPsv0IOp6/cqHQHS6jvNtEFKAobMfgPv1KwtgXW2NJ2GDEALkM4Dp2odmQbTNXm2h/M8gl5NQYV1tGxHi1Sch1w7gbv1Kh0CMhHW1laZFNmpsp9DQAkTbITIg2mavNpAeTHR++277d/L4PB1RdfUd8irWxil8iH0At+v/D4fpyagD+oEgAAAAAElFTkSuQmCC';ESPR['big_zombie']={img:i,w:32,h:36,n:4}})();
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAQCAYAAACm53kpAAABO0lEQVR4nO1WwQ2CQBBcjZVswkffJBTg3yKsggqoggJ8UoEF8DS+TOjAty9zPszKHrjHcneiRifhwcIsw8xyB8Afv40ZP0FEoyE1TTMbvus7sOgWqrKAZbYWCckqfamgEPgE2DNgagGxMTZA0QC68XSsRXIMARzvMDDqBMRArE9QG+DcJaQqC4tI51oB3Qd+4vohGrDM1o8kyEVXMrERaqA2QNGAUIROUCi0AfbWgM02B4AcAFrB99p4AQRbgK4XNytZpXA61lCVhZcWFywD+OqKiKZ9iXzynx9fA8cG+HQXeLYdIaLRmBBrgnxA+kg/D5Bf5+gViMy3D4D2Ox4ygZtHPfji5eJ3jZcM1PTw1Q+IaA77nUFE66Cak8z418vZOjR8ievTQ6tfnACA/kjxmkuA6/qYCQjtodF/A2fT/y71vylTAAAAAElFTkSuQmCC';ESPR['skelet']={img:i,w:16,h:16,n:4}})();
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAXCAYAAAC74kmRAAAB2UlEQVR4nO2XsWrCUBSGj23pVMkTSEDIZIVU6uYg3exjFByy9Ak6+gR26BDoK7ilW3Ho1iCC7SQVtPgAoksLwQ7x3iS399yc6x2kNN+S3EP+e3L+c5IoQEFBQUFBQcF/pSQGqtXqliKczWa/tH+RE1nQsl04a0R8/TA95ueeE8FyMEE3PLSBuvmlBsjwnChjhIpDG6iTX2nAZhQLvUZcvOdEPEaBX1tODKToTQzEwBp4pBKt5mNYzcd8AxajwvQsuedEWvo0LL8Om1FseDq/2ADUgLxO5Y2qqBcLoIw6pQAVlAaiBoSBD5btgmW7mbhluzB9f81NbqpnN7vvBFIbqHwEwsDPPIssRsVEbzqB1AagL8H23Q0aXw4muZ8xU30Y+HB53d2tEhMt24Uw8MGpNVVyvod4H2IDpAZcLD4AFvG5//YM3fOrzNEZ5CdnDHuP0O+04PbphR+pekoBGNQGSA2oV76lazGOkTYQegCTz1MASI4UTCZIp4G5P4T6nZZyLSNtVL/TgnoliVP0phOo00CpAaxTw+2ax+5rTWiXyrvVV24RIpTCGaYTqMorrtEJGG7XmTFjb10xLkNmIADsZeA+E6jTQPTfoFgkFsf04rVYXKVXge2hm/8HzRFerLotC3gAAAAASUVORK5CYII=';ESPR['orc_shaman']={img:i,w:16,h:23,n:4}})();
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAXCAYAAAC74kmRAAABZ0lEQVR4nO2XwUrEMBCGZ12PQp5AAgUPIkIUvXv2MQTfwjfJzRfYW87eLUth8SQWutAHKOxJEL1YlyaZZOJ0t4j5bvt3/0z6zzTdBchkMplM5t8ys4WiKD4pxrquHe9f5NAnCqng6PIDNbWLFXpt6gBT63sD4DJ1gCn1dxIAF06AqRyELm6Wc9gs545GhevfB8EAuqaCrqkcjQrXz4XSADSAWKdizyrX36/BmSBKA9AASqNBSAVCqoEupILXl+doca6/3+xvJ4jagOAjUBrtHEal0aQNcP3cCaI2AH0L3DzcoXq7WEXf41x/aTRc3d5/f9qGKKSC0mg4ObsO2X/WsPdhN8AbwMX6DWCNL9xGS48D5QYwqA3wBnB+/B5c/CkQDsA4AXImKKX+Tn4ITR1gSn1vAI+zUwBwT9ztgTLUx4YbYAroBHRNNRiz/tS1dR9TB5hSH/07bN8kpmN++7uYHvKHwNZIrf8F9Vn8eSVA1NYAAAAASUVORK5CYII=';ESPR['orc_warrior']={img:i,w:16,h:23,n:4}})();
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAXCAYAAAC74kmRAAAB1klEQVR4nO1WsWqDUBQ9lkAK7o6B3uAUp2JcgnugH9Ct0Gx+Q8kU8g0ZC93yAQHHQOjU0CmZQl+gY/YMmeyQKvp8mqc+KaGeRb2+9+49596rF2jQoEGDBg3+LbS8l0QUxJ8ZY7nrrxGtrBdEFIzbFgbmIbINgaCICNcgYEKAeMAh+fedEV2BA4hISgQVAlaFTAJSFeDqNgBgCWAAYHLawIeByWkDV7exOq6lHFYVsAx4wqIEAEkhUgK83H2jO18AAL4eH+BbBgDAtwx05zOYvX5uEFUEvERIRrhx24ru+QSM2+c44sj8BpRFVQFDlG2hZes2uhclAKfkeqEAI8f7JSO21wUVLVQ0ATd1EBk5nlAsGQFd3Yar21Emw5KNMqgYiQpgjGlDINhtF5Ht7f4ZAPD0+YpVr1/7r0xFCxWp4FQLMMY0s9cPePtEgvxfC1jGfyoYIgp22w/hAaYkAf7rHQ/w0j7fMjDddwCcqyGO6b6D1XEtdY6sf6UVEDrPEbD2Qaiof43fDAB5FQDIZVJkVyCg8goUToIjx0sNLEvHk54E8zKQFYgKlPEvnAP4PgsPlum/uIDhWiIKigh4iWReDEX9C1uAd5BlzyJQZX/4r+cJiOwq/P8AwwiehcNRDQwAAAAASUVORK5CYII=';ESPR['wogol']={img:i,w:16,h:23,n:4}})();
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAAAkCAYAAABBszIzAAADlUlEQVR4nO2awWoiQRCGfzeLXhQfQKIwd0FkHyDnvfkKC3v0DfaYN/AY2FfwlrP3hCAMe1oQVHwAiRcD4h5Cmbanu6d6untGs/2BBMzM/FUzf1WXrUAkEolEIpFIJBKJRCKRSCQS+fzUipyUJMmRc9xisSh0/UvX/0x8tT0hSZJjuzdAc3jIP3iKo++HULU+xcA57hoKwNoA/ztVG9C3/hdfgUWuk9wOkCTJcbFY1FRtZ/dyEyYqJlXrfwZyDSA+/LtaC7Pj6+l/zeEBm2kKAOiM+mfn0fuumAxYhr6JMgwYugC1SwAJ0ppTFO7AokM2YNmI90HOpTk8YLucY7ucozk8nL22y7kXfVP+PvS1BiDhdm+gvdjs/jfavQFUBmn3Bvj754kVhAqOATn612rAsgowtwMA2fYKfLTY58cH5UT6/PhgEWaWPAOG1q/agGUVoLEDmE4URTfTNPNyJc+AofUvxYBA2ALUDoFiAPKwsV3O0e4N8O37TzSHB2WAd79+sALQoRt8ytKXH4BsKtmAGe6d5I35+9TXGkAM4H2oeH9/3G1gstqfjjNNoi6DkM6AZelfkgFDFiBrJ1B1kzk317R+5aEzYFn6l2TAkAXI3grujPqYTVNg3cK4C0xWe6Xzzsk+uCKoknSZjDlUbUCRkAXIMoBqyBh3G5hoNmEoYNZ+NZOMAZdzhgFxtQaUCVWArO8C6AZ0Rn3Mjq9I13UA7yYYdxuZyZs2I3yhM6Bu4t+93Djvkskf/yh30lZtvqhenVHfeS8iZP7sL4N0JqBgTAG5ckkGFLVN+fowoXgtwJy/HC83f+1nfZNr72ot9G/ftBcVhxSiyNeichVSUptpqoyBdMXWuJmmwbVVuiIhYhh3G2fH6paEPG3jDCBvfX4krX/4AJTB2UIGFIcYWs90BiTdiVQR9IWKdRACu5ebU0untZhikHU5s4kr6bp+dg9oJrPVNnYA0QCmis9jstpbV4Cs7xKDrX7eml2kAwJ2XbCsDsz+GCg7zuY8wL4DyLgYsAhm89l1QKBYF9QXoL8OzBoC+7dv7AdAA0q6rp8Niq4UvZavGFyu4yOGUPmzOoBN9dNx9NdH8jbVT7H6NJ9t9/EdQ8j82R2gSDJVVJ9oQF/Lhm0evmMImb+xA5x+/rVunQIRfxKmQly38o7lQgYsUolV6vuKIWT+uVOpahrVTZQ2x9ro2phKd2zRCVweBm30Q8TgO/9/O3tDk0YIHKcAAAAASUVORK5CYII=';ESPR['ogre']={img:i,w:32,h:36,n:4}})();
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAAAkCAYAAABBszIzAAAEc0lEQVR4nO1aQW7jMAzkLhbID/IAAz7F15zygbxif+JTHtJv9AM9FejJPQXoA/yDnLqHLFOaS4qkJDtdxAMUqhLZpMQhJZEBWLFixYoVK1asWLHif0TTNJ+PLP/uuMcCoExJ9hL63Ft+LfzKfbBpms+Pj48f2Erflauny47oU1MWyqDfSWNqyZ8bWQRYygCSHPpuyxA15febDk6X4fbZc7cFAICX87U9tOOtf2pgMUKUrvdPjwD8k76T2lqQJkYN8Nxtod900G+6SZ/qnKsTfw4N3G+6ybjfb0/w++1p0ufj5tgStHdGZZkE4B7nNYD0TAT8OVzQJQyAXoVzx3eh13uAhJnD+2ueO1wRIPW9ZgBqwMgiaIY/tGPYAPhs1Ag4HvU4XYZbqOdod3tod/tJn2LO81CNCCyeAaQX4R6IrQXvOA5pj08ZHhccx1ADHNoRYMgzAichevShHaE/d3AcpnM7DiPQ8QBf/TlIYJ1BvPLECEAftjxQ8wDqgQB5YRjgy/voRPtNB8dhnCw67fNtIiqfjz1dhoksBN+WqFwcP/eNQIvAXqi3AHrdoYaPeAD1wJBWBJSAXAcNdCzOJUc2XQMAOscRzu+v0O72ZlsifwmoBKAeiIvNw6AGbgCA/EXAbec4XCMQtqfLMOlPWtiKHhuBpS/f66V+7pz5ljHnOcLMA0geKPVTKFUezxJo1OMQ88AoqL48CnBYRMhFLRJYz4lnADphafG9bQ0v1JT3eCC+o0gJosuc46VnOfGiV2rP2KSSqRcsuQfmniFqZiStSFBbtiULz2XoZLzv1SWZB3hUD0y9S3svfj7HXo3JNgC4JdusWxC/CWmECiVooorXXgyPJ85REJLkUz1qF5/w3ZhLka7fWmIKYJoTAPjaxiU9s6uB94RGgjm9MPL+UgLSuWlJMM8h/DYmkY8zU8HfEVYhZK56PK9xaHJrHAABpkmwlMeXQCUAPXHWqKiVnGC1/1PPSSdor2xLF6sYU4uA9AoeuXZL0EipEkC7ilCc31/Nz3OLQlx2bkWx9Nmo/JqVOnoFz72GW1fxZATQvuOGx772OUB5Rc6jh/R5SVgujRo1rq+0oMYTYVbrgfsMQAse7W4Pz9022eI4PiEvahMwitoE9AKJk7qCA/iv4QCZeQD+YwisBtKqYKrl1cBSPAoBKfEs8kjpbkzCeeGKAP2myzqJlhxcHp2AKUQJmDpLuVLBWkHo5bw1jVxSF8dkCEWUVDXka8kYCy/na9XSK1vzeFwD+oMctRL6t039IIfqoyrGjW+BZ5+wT0+h0Z+G4f81CBiVjzrUIqBXPl/3XPIBTLOFWjZQVEha/FygB0SyYznyUwQsuX5SHZaKgBLxELnbKq4Dt4NKAHoY4cpooUUaV5oSrUXAHNkAyxKQ1xis6OMhIEKLRG7FaEjSJuQdF8EjEbAk8moERGiRKFQM8k6mlvEBrgqfGnARyzsuV/ZNzkwEjP7mgILf0P69scmRKMzM1IS846L4DvKXjIBWJPASkI+V9PkDQXbtfokT7UEAAAAASUVORK5CYII=';ESPR['big_demon']={img:i,w:32,h:36,n:4}})();
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAXCAYAAAC74kmRAAAByElEQVR4nO1WTWrCQBT+glI3LR6gVCHgpiLYgtBlF91Lz+DaA3iCHqDrnqF07yJLQZCA6EY6kJQeIOimhZIu7JTJ5M1fIkhpvlXykm++9773MhOgQoUKFSpU+Lfw5IDv+6kNkTGW4/5F1Klgs93H6fWXkvT+vFQ+O7aBrvqkARymQlVFcAOL8A9hoEsDtQYAwGY1J+Od7sBELcwvM4G27/EG1OUgACRRiCTKJ8uLsSleFC/Cty3AtIapAbkJGLcav9eP8Yc5SykpYG/guNVw5lNwmaAiDcwZQCX98vSQux+OJmRi3EBxHVv+ISbQtYEZAxhjnu/7qbiJieLZRGgDuGiz3UcShc78MhOo4ugaQO7C8iak+hZVu3hRPnUCbFZzrGdTAMDlzR0AYD2bYjiaGPVFXbkBne4AjDFPuYAOSRQqjyHKABG7Rc2ab1OAjb6uAeQxeBW/kgSOQPt0j92iZvGWHuf3PQDIfIqA3Ski6ssNFRtAGtC7+NQuHsR68UMbqCugrL7xR6gIjm2giz5pwPLtZP9ius3Eb72zn6vy57sOZQ10gXICgnSbGTO+Q8txCsc20EWfNEBVpE3xorBsIBWnUPYP0kX/GyNzZU992JcKAAAAAElFTkSuQmCC';ESPR['masked_orc']={img:i,w:16,h:23,n:4}})();
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAXCAYAAAC74kmRAAACF0lEQVR4nO1YvWoCQRD+NAFJHbjeFatcFdAmL3DgA1gnXZ5BrPIQdhbp7gEO7CWNpjyrwytSHqQMIUW4FDLJ3u7suqeLScQPZGBmf2bm5m8FTjjhqCCEKPeR/2sIIcrP99fSZCQnbx5OvcMhWy21Ly2EKLPVUlurOeCYQkgIUdLPtKahbshWS3SvesjzvKEu3ib/bciGzsJAk0dpAQAV3dkUqBNCfw3jVsgaD/BOsdYAlxDyDV8p2IkTdOJE46k4Vxndqx4A3lsk26agLT1scinF2DXb5LtAc8C4FeKmW7CLZ2GAKC2M+e/LAFrD8V1x178HAIzaOk+G5gAf8GEAUI1CKmCuGLVfWF6UVnlGB1C+rIeDKs8hDQi7GGBKwVkYfMts0fPwkSKLN52KOpZMVf29R8C+BrikoAl0LkUf3Uf07OJSu9fYBe7691rOcDmkom4bMsG1inPgHGxyuuaAh48UnTjB/O0Z08UEUVqgEyeI0gLTxcRNe+xngA/IBtsiruIAKYRgooeaAHeNQII8L9hmB60G5HneMG2oY7xrG1JBRWzOFrHEeRbheJz+tR5DLlOYjxSyRaAN9NwFflquTGU5oakewG2UqXqATwNs96rUhMfrW8zCAOvhgKWqDtpr0NaGALhOgmwPJsq1I1/3j1shgE0kypD58n52DnjKAuMBgH2gqfsFfN8vgwyt9X+AutlF9p/3fwFjAMLJpX3K1AAAAABJRU5ErkJggg==';ESPR['chort']={img:i,w:16,h:23,n:4}})();
+(function(){const i=new Image();i.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAQCAYAAACm53kpAAAA+klEQVR4nGNgGAWjYBSMglEwcgEjuoCSktJ/Qpru3buHoW+oAhZsgvzyBgw8Rn+xani6/jJeAwc6AEm1H2sAUAoGOgBJsR9vAMAUSwfqYtVMK0BJAJIKmMjRREwsMTBAHIvsYHoFICn24wyAAy3zGPjlDRj45Q3gYvzyBgy3r56m2GEDHYDI9uNNAWe2zUZJime2zSbakoEOQGLtxxkAJl6pDKrapvBY+HKOGS5GbCk+0AFIjP1YC8GPDy/ALb537x6jkpLSf2QxYoCJVyrDx4cX4Hx+eQO4GCkB6FCThNcDlNqP1SHISQymGJsYIb0wtdjEiNWPDVDTfgCxDrJM9XMV3gAAAABJRU5ErkJggg==';ESPR['goblin']={img:i,w:16,h:16,n:4}})();
+
+const ENE_SPR={
+  'rata':'imp','zombi':'big_zombie','esqueleto':'skelet',
+  'cultista':'orc_shaman','orco':'orc_warrior',
+  'espectro':'wogol','gárgola':'ogre'
+};
+const JEFE_SPR=['masked_orc','chort','big_zombie','ogre','big_demon'];
+
 
 /* ================= colores de enemigos por bioma ================= */
 function tintColor(hex,bi){
@@ -439,12 +466,12 @@ setInterval(()=>{
 /* ================= constantes ================= */
 const PISO_FINAL=25;
 const META=[
-  {k:'dmg', n:'Fuerza',     d:'+10% de daño por nivel',        v:.10, ic:'⚔'},
-  {k:'hp',  n:'Vitalidad',  d:'+25 HP máximo por nivel',       v:25,  ic:'♥'},
-  {k:'spd', n:'Ligereza',   d:'+5% velocidad de movimiento',   v:.05, ic:'➤'},
-  {k:'gold',n:'Codicia',    d:'+15% oro saqueado',             v:.15, ic:'⛁'},
-  {k:'mag', n:'Imán de almas',d:'+22% radio de recolección',   v:.22, ic:'◎'},
-  {k:'crit',n:'Precisión',  d:'+4% prob. de golpe crítico',    v:4,   ic:'✛'}
+  {k:'dmg', n:L('Fuerza','Strength'),     d:L('+10% de daño por nivel','+10% damage per level'),        v:.10, ic:'⚔'},
+  {k:'hp',  n:L('Vitalidad','Vitality'),  d:L('+25 HP máximo por nivel','+25 max HP per level'),       v:25,  ic:'♥'},
+  {k:'spd', n:L('Ligereza','Swiftness'),   d:L('+5% velocidad de movimiento','+5% movement speed'),   v:.05, ic:'➤'},
+  {k:'gold',n:L('Codicia','Greed'),    d:L('+15% oro saqueado','+15% gold looted'),             v:.15, ic:'⛁'},
+  {k:'mag', n:L('Imán de almas','Soul Magnet'),d:L('+22% radio de recolección','+22% pickup radius'),   v:.22, ic:'◎'},
+  {k:'crit',n:L('Precisión','Precision'),  d:L('+4% prob. de golpe crítico','+4% critical hit chance'),    v:4,   ic:'✛'}
 ];
 const TIPOS=[
   {n:'rata',    r:11, hp:14,  dmg:6,  spd:115, col:'#8E94A6', piso:1, peso:30},
@@ -457,58 +484,58 @@ const TIPOS=[
 ];
 const JEFES=['REY CARROÑERO','MATRIARCA DE LA CRIPTA','SEÑOR DE LA HORDA','COLOSO DE HUESO','EL DEVORADOR'];
 const UPGRADES=[
-  {k:'dmg',  ic:'⚔', n:'Filo brutal',      d:'+25% de daño',                         max:8},
-  {k:'aspd', ic:'⚡', n:'Frenesí',          d:'+18% velocidad de ataque',             max:6},
-  {k:'area', ic:'◠', n:'Tajo amplio',      d:'+20% de alcance y arco del golpe',     max:5},
-  {k:'mspd', ic:'➤', n:'Pies veloces',     d:'+12% velocidad de movimiento',         max:5},
-  {k:'hp',   ic:'♥', n:'Sangre de toro',   d:'+30 HP máx. y curación completa',      max:8},
-  {k:'orb',  ic:'❂', n:'Hoja orbital',     d:'+1 cuchilla que gira a tu alrededor',  max:5},
-  {k:'bolt', ic:'✦', n:'Proyectil arcano', d:'+1 proyectil automático al más cercano',max:4},
-  {k:'mag',  ic:'◎', n:'Imán',             d:'+45% radio de recolección',            max:4},
-  {k:'crit', ic:'✛', n:'Ojo certero',      d:'+10% prob. de crítico (daño x2)',      max:5},
-  {k:'vamp', ic:'☥', n:'Sed vampírica',    d:'+3% robo de vida en cada golpe',       max:5},
-  {k:'regen',ic:'✚', n:'Regeneración',     d:'+1.5 HP por segundo',                  max:5}
+  {k:'dmg',  ic:'⚔', n:L('Filo brutal','Brutal Edge'),      d:L('+25% de daño','+25% damage'),                         max:8},
+  {k:'aspd', ic:'⚡', n:L('Frenesí','Frenzy'),          d:L('+18% velocidad de ataque','+18% attack speed'),             max:6},
+  {k:'area', ic:'◠', n:L('Tajo amplio','Wide Slash'),      d:L('+20% de alcance y arco del golpe','+20% range and swing arc'),     max:5},
+  {k:'mspd', ic:'➤', n:L('Pies veloces','Swift Feet'),     d:L('+12% velocidad de movimiento','+12% movement speed'),         max:5},
+  {k:'hp',   ic:'♥', n:L('Sangre de toro','Bull Blood'),   d:L('+30 HP máx. y curación completa','+30 max HP and full heal'),      max:8},
+  {k:'orb',  ic:'❂', n:L('Hoja orbital','Orbital Blade'),     d:L('+1 cuchilla que gira a tu alrededor','+1 blade orbiting around you'),  max:5},
+  {k:'bolt', ic:'✦', n:L('Proyectil arcano','Arcane Bolt'), d:L('+1 proyectil automático al más cercano','+1 auto-bolt to nearest enemy'),max:4},
+  {k:'mag',  ic:'◎', n:L('Imán','Magnet'),             d:L('+45% radio de recolección','+45% pickup radius'),            max:4},
+  {k:'crit', ic:'✛', n:L('Ojo certero','Keen Eye'),      d:L('+10% prob. de crítico (daño x2)','+10% crit chance (x2 dmg)'),      max:5},
+  {k:'vamp', ic:'☥', n:L('Sed vampírica','Vampiric Thirst'),    d:L('+3% robo de vida en cada golpe','+3% lifesteal on hit'),       max:5},
+  {k:'regen',ic:'✚', n:L('Regeneración','Regeneration'),     d:L('+1.5 HP por segundo','+1.5 HP per second'),                  max:5}
 ];
 const ARMAS=[
-  {k:'espada',  ic:'⚔', n:'Espada',          d:'Equilibrada. Tajo en arco amplio.',              costo:0,   dmg:1,   cd:.55, range:95,  arc:1.9,  tipo:'arc'},
-  {k:'daga',    ic:'🗡', n:'Dagas gemelas',   d:'Rapidísimas y cortas. +15% crítico.',            costo:150, dmg:.55, cd:.22, range:72,  arc:1.7,  tipo:'arc', critB:15},
-  {k:'lanza',   ic:'➹', n:'Lanza del abismo',d:'Estocada larguísima que ensarta en línea.',      costo:300, dmg:1.2, cd:.7,  range:175, arc:.55,  tipo:'thrust'},
-  {k:'hacha',   ic:'❂', n:'Hacha giratoria', d:'Giro completo de 360°. Nada queda en pie.',      costo:550, dmg:.85, cd:.9,  range:108, arc:6.3,  tipo:'spin'},
-  {k:'martillo',ic:'⬢', n:'Martillo sísmico',d:'Lento y devastador. Onda expansiva que empuja.', costo:950, dmg:1.8, cd:1.2, range:125, arc:6.3,  tipo:'slam', knock:34}
+  {k:'espada',  ic:'⚔', n:L('Espada','Sword'),          d:L('Equilibrada. Tajo en arco amplio.','Balanced. Wide arc slash.'),              costo:0,   dmg:1,   cd:.55, range:95,  arc:1.9,  tipo:'arc'},
+  {k:'daga',    ic:'🗡', n:L('Dagas gemelas','Twin Daggers'),   d:L('Rapidísimas y cortas. +15% crítico.','Lightning fast and short. +15% crit.'),            costo:150, dmg:.55, cd:.22, range:72,  arc:1.7,  tipo:'arc', critB:15},
+  {k:'lanza',   ic:'➹', n:L('Lanza del abismo','Abyss Lance'),d:L('Estocada larguísima que ensarta en línea.','Long thrust that skewers in a line.'),      costo:300, dmg:1.2, cd:.7,  range:175, arc:.55,  tipo:'thrust'},
+  {k:'hacha',   ic:'❂', n:L('Hacha giratoria','Spinning Axe'), d:L('Giro completo de 360°. Nada queda en pie.','Full 360° spin. Nothing survives.'),      costo:550, dmg:.85, cd:.9,  range:108, arc:6.3,  tipo:'spin'},
+  {k:'martillo',ic:'⬢', n:L('Martillo sísmico','Seismic Hammer'),d:L('Lento y devastador. Onda expansiva que empuja.','Slow and devastating. Shockwave pushback.'), costo:950, dmg:1.8, cd:1.2, range:125, arc:6.3,  tipo:'slam', knock:34}
 ];
 const PJS=[
-  {k:'caballero',ic:'🛡',n:'Caballero',     d:'Cuerpo a cuerpo. Usa todo el arsenal de armas.',                        costo:0},
-  {k:'maga',     ic:'✦', n:'Maga del Vacío',d:'Orbes arcanos teledirigidos a distancia. -20% HP máx, +10% velocidad.', costo:2000}
+  {k:'caballero',ic:'🛡',n:L('Caballero','Knight'),     d:L('Cuerpo a cuerpo. Usa todo el arsenal de armas.','Melee fighter. Uses the full weapon arsenal.'),                        costo:0},
+  {k:'maga',     ic:'✦', n:L('Maga del Vacío','Void Mage'),d:L('Orbes arcanos teledirigidos a distancia. -20% HP máx, +10% velocidad.','Homing arcane orbs at range. -20% max HP, +10% speed.'), costo:2000}
 ];
 const MISIONES=[
-  {k:'k100',  n:'Carnicero I',      d:'Eliminá 100 enemigos',          f:()=>gstats.kills,    meta:100,  rec:60},
-  {k:'k1000', n:'Carnicero II',     d:'Eliminá 1.000 enemigos',        f:()=>gstats.kills,    meta:1000, rec:250},
-  {k:'k5000', n:'Carnicero III',    d:'Eliminá 5.000 enemigos',        f:()=>gstats.kills,    meta:5000, rec:800},
-  {k:'p10',   n:'Profundidades I',  d:'Llegá al piso 10',              f:()=>mejor,           meta:10,   rec:120},
-  {k:'p15',   n:'Profundidades II', d:'Llegá al piso 15',              f:()=>mejor,           meta:15,   rec:300},
-  {k:'p20',   n:'Profundidades III',d:'Llegá al piso 20',              f:()=>mejor,           meta:20,   rec:600},
-  {k:'e10',   n:'Cazaélites',       d:'Eliminá 10 élites dorados',     f:()=>gstats.elites,   meta:10,   rec:180},
-  {k:'b5',    n:'Matajefes',        d:'Derrotá 5 jefes',               f:()=>gstats.bosses,   meta:5,    rec:200},
-  {k:'oro10', n:'Tesorero',         d:'Saqueá 10.000 de oro total',    f:()=>gstats.oroTotal, meta:10000,rec:250},
-  {k:'c30',   n:'Imparable',        d:'Lográ un combo x30',            f:()=>gstats.comboMax, meta:30,   rec:150},
-  {k:'n15',   n:'Veterano',         d:'Nivel 15 en una sola corrida',  f:()=>gstats.nivelMax, meta:15,   rec:180},
-  {k:'a3',    n:'Coleccionista',    d:'Desbloqueá 3 armas',            f:()=>armas.length,    meta:3,    rec:220}
+  {k:'k100',  n:L('Carnicero I','Butcher I'),      d:L('Eliminá 100 enemigos','Kill 100 enemies'),          f:()=>gstats.kills,    meta:100,  rec:60},
+  {k:'k1000', n:L('Carnicero II','Butcher II'),     d:L('Eliminá 1.000 enemigos','Kill 1,000 enemies'),        f:()=>gstats.kills,    meta:1000, rec:250},
+  {k:'k5000', n:L('Carnicero III','Butcher III'),    d:L('Eliminá 5.000 enemigos','Kill 5,000 enemies'),        f:()=>gstats.kills,    meta:5000, rec:800},
+  {k:'p10',   n:L('Profundidades I','Depths I'),  d:L('Llegá al piso 10','Reach floor 10'),              f:()=>mejor,           meta:10,   rec:120},
+  {k:'p15',   n:L('Profundidades II','Depths II'), d:L('Llegá al piso 15','Reach floor 15'),              f:()=>mejor,           meta:15,   rec:300},
+  {k:'p20',   n:L('Profundidades III','Depths III'),d:L('Llegá al piso 20','Reach floor 20'),              f:()=>mejor,           meta:20,   rec:600},
+  {k:'e10',   n:L('Cazaélites','Elite Hunter'),       d:L('Eliminá 10 élites dorados','Kill 10 golden elites'),     f:()=>gstats.elites,   meta:10,   rec:180},
+  {k:'b5',    n:L('Matajefes','Boss Slayer'),        d:L('Derrotá 5 jefes','Defeat 5 bosses'),               f:()=>gstats.bosses,   meta:5,    rec:200},
+  {k:'oro10', n:L('Tesorero','Treasurer'),         d:L('Saqueá 10.000 de oro total','Loot 10,000 total gold'),    f:()=>gstats.oroTotal, meta:10000,rec:250},
+  {k:'c30',   n:L('Imparable','Unstoppable'),        d:L('Lográ un combo x30','Reach a x30 combo'),            f:()=>gstats.comboMax, meta:30,   rec:150},
+  {k:'n15',   n:L('Veterano','Veteran'),         d:L('Nivel 15 en una sola corrida','Level 15 in a single run'),  f:()=>gstats.nivelMax, meta:15,   rec:180},
+  {k:'a3',    n:L('Coleccionista','Collector'),    d:L('Desbloqueá 3 armas','Unlock 3 weapons'),            f:()=>armas.length,    meta:3,    rec:220}
 ];
 const MODS=[
-  {n:'FRENESÍ',       d:'enemigos +25% veloces · +50% oro',    spd:1.25, oro:1.5},
-  {n:'HORDA DENSA',   d:'+45% de aparición · gemas +40% XP',   spawn:.69, gem:1.4},
-  {n:'CARROÑA DORADA',d:'doble oro · enemigos +25% HP',        oro:2,    hp:1.25},
-  {n:'NIEBLA MALDITA',d:'enemigos +30% daño · +50% XP',        dmg:1.3,  gem:1.5},
-  {n:'SANGRE DÉBIL',  d:'enemigos -20% HP · -30% oro',         hp:.8,    oro:.7},
-  {n:'PASO LIGERO',   d:'+15% tu velocidad · enemigos +15% HP',pspd:1.15,hp:1.15}
+  {n:L('FRENESÍ','FRENZY'),       d:L('enemigos +25% veloces · +50% oro','enemies +25% faster · +50% gold'),    spd:1.25, oro:1.5},
+  {n:L('HORDA DENSA','DENSE HORDE'),   d:L('+45% de aparición · gemas +40% XP','+45% spawn rate · gems +40% XP'),   spawn:.69, gem:1.4},
+  {n:L('CARROÑA DORADA','GOLDEN CARRION'),d:L('doble oro · enemigos +25% HP','double gold · enemies +25% HP'),        oro:2,    hp:1.25},
+  {n:L('NIEBLA MALDITA','CURSED FOG'),d:L('enemigos +30% daño · +50% XP','enemies +30% dmg · +50% XP'),        dmg:1.3,  gem:1.5},
+  {n:L('SANGRE DÉBIL','THIN BLOOD'),  d:L('enemigos -20% HP · -30% oro','enemies -20% HP · -30% gold'),         hp:.8,    oro:.7},
+  {n:L('PASO LIGERO','LIGHT STEP'),   d:L('+15% tu velocidad · enemigos +15% HP','+15% your speed · enemies +15% HP'),pspd:1.15,hp:1.15}
 ];
 const SINERGIAS=[
-  {k:'tormenta',     r:{orb:3,aspd:3},   n:'⚡ TORMENTA DE ACERO',    d:'Hojas orbitales duplican velocidad y disparan ondas cortantes', fx:'orbStorm'},
-  {k:'verdugo',      r:{crit:3,dmg:3},   n:'✛ EL VERDUGO',            d:'Críticos hacen x3 en lugar de x2',                             fx:'execCrit'},
-  {k:'pactosangre',  r:{vamp:3,hp:3},    n:'☥ PACTO DE SANGRE',       d:'Curación excedente se convierte en escudo temporal',            fx:'bloodPact'},
-  {k:'teletormenta', r:{bolt:2,crit:2},   n:'✦ TORMENTA ARCANA',      d:'Proyectiles perforan y rebotan a otro enemigo',                 fx:'pierceBolt'},
-  {k:'segador',      r:{mspd:3,orb:2},   n:'➤ EL SEGADOR',            d:'Moverte deja un rastro dañino a tu paso',                      fx:'trail'},
-  {k:'imán',         r:{mag:3,regen:2},   n:'◎ COSECHA DE ALMAS',     d:'Las gemas de XP también curan 5 HP al recolectarlas',           fx:'gemHeal'}
+  {k:'tormenta',     r:{orb:3,aspd:3},   n:L('⚡ TORMENTA DE ACERO','⚡ STEEL STORM'),    d:L('Hojas orbitales duplican velocidad y disparan ondas cortantes','Orbital blades double speed and fire cutting waves'), fx:'orbStorm'},
+  {k:'verdugo',      r:{crit:3,dmg:3},   n:L('✛ EL VERDUGO','✛ THE EXECUTIONER'),            d:L('Críticos hacen x3 en lugar de x2','Crits deal x3 instead of x2'),                             fx:'execCrit'},
+  {k:'pactosangre',  r:{vamp:3,hp:3},    n:L('☥ PACTO DE SANGRE','☥ BLOOD PACT'),       d:L('Curación excedente se convierte en escudo temporal','Excess healing becomes a temporary shield'),            fx:'bloodPact'},
+  {k:'teletormenta', r:{bolt:2,crit:2},   n:L('✦ TORMENTA ARCANA','✦ ARCANE STORM'),      d:L('Proyectiles perforan y rebotan a otro enemigo','Bolts pierce and bounce to another enemy'),                 fx:'pierceBolt'},
+  {k:'segador',      r:{mspd:3,orb:2},   n:L('➤ EL SEGADOR','➤ THE REAPER'),            d:L('Moverte deja un rastro dañino a tu paso','Moving leaves a damaging trail behind you'),                      fx:'trail'},
+  {k:'imán',         r:{mag:3,regen:2},   n:L('◎ COSECHA DE ALMAS','◎ SOUL HARVEST'),     d:L('Las gemas de XP también curan 5 HP al recolectarlas','XP gems also heal 5 HP when collected'),           fx:'gemHeal'}
 ];
 const COFRE_CONTENIDO=['upgrade','gold','tempBuff','curse'];
 
@@ -544,7 +571,7 @@ function checkSinergias(){
       el.innerHTML='<div class="syn-t">'+sy.n+'</div><div class="syn-d">'+sy.d+'</div>';
       document.body.appendChild(el);
       setTimeout(()=>{el.style.transition='opacity .5s';el.style.opacity=0;setTimeout(()=>el.remove(),600)},2800);
-      texto(P.x,P.y-80,'¡SINERGIA DESBLOQUEADA!','#FFD23C',20);
+      texto(P.x,P.y-80,L('¡SINERGIA DESBLOQUEADA!','SYNERGY UNLOCKED!'),'#FFD23C',20);
       for(let i=0;i<30;i++){const a=R(0,6.283),v=R(80,200);
         parts.push({x:P.x,y:P.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:R(.5,.9),col:'#FFD23C',r:R(2,5)})}
     }
@@ -572,14 +599,14 @@ function trySuper(){
   P.superFlash=.25;
   for(let i=0;i<60;i++){const a=R(0,6.283),v=R(120,400);
     parts.push({x:P.x,y:P.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:R(.4,1),col:['#FFD23C','#D44A42','#E8B33C','#FF8844'][i%4],r:R(2,6)})}
-  texto(P.x,P.y-60,'🔥 IRA DEL ABISMO 🔥','#FFD23C',26);
+  texto(P.x,P.y-60,L('🔥 IRA DEL ABISMO 🔥','🔥 WRATH OF THE ABYSS 🔥'),'#FFD23C',26);
 }
 
 /* ===== COFRES ===== */
 function spawnCofre(){
   const a=R(0,6.283),d=R(250,450);
   cofres.push({x:P.x+Math.cos(a)*d,y:P.y+Math.sin(a)*d,r:18,t:0,abierto:false});
-  texto(P.x,P.y-50,'✦ ¡Cofre aparecido!','#E8B33C',15);
+  texto(P.x,P.y-50,L('✦ ¡Cofre aparecido!','✦ Chest appeared!'),'#E8B33C',15);
 }
 function abrirCofre(c){
   c.abierto=true;sfxChest();shake=6;
@@ -603,15 +630,15 @@ function abrirCofre(c){
     const g=Math.round((80+piso*30)*R(1,2.5));
     oroRun+=g;gstats.oroTotal+=g;
     for(let i=0;i<8;i++)monedas.push({x:c.x+R(-20,20),y:c.y+R(-20,20),v:Math.round(g/8),fly:false});
-    texto(c.x,c.y-30,'¡TESORO! +'+F(g)+' oro','#E8B33C',18);
+    texto(c.x,c.y-30,L('¡TESORO! +','TREASURE! +')+F(g)+' oro','#E8B33C',18);
   } else if(tipo==='tempBuff'){
     P.tempBuff={tipo:['dmg','spd','crit'][RI(0,2)],mult:1.5,dur:15};
-    const nombres={dmg:'🔥 +50% DAÑO',spd:'➤ +50% VELOCIDAD',crit:'✛ +50% CRÍTICO'};
+    const nombres={dmg:L('🔥 +50% DAÑO','🔥 +50% DAMAGE'),spd:L('➤ +50% VELOCIDAD','➤ +50% SPEED'),crit:L('✛ +50% CRÍTICO','✛ +50% CRIT')};
     texto(c.x,c.y-30,nombres[P.tempBuff.tipo]+' (15s)','#3DC97E',18);
   } else {
     /* maldición: más enemigos pero más XP */
     P.cursed=15;
-    texto(c.x,c.y-30,'💀 MALDICIÓN: doble spawn, +80% XP (15s)','#8B7CF0',15);
+    texto(c.x,c.y-30,L('💀 MALDICIÓN: doble spawn, +80% XP (15s)','💀 CURSE: double spawn, +80% XP (15s)'),'#8B7CF0',15);
     sfxCurse();
   }
 }
@@ -621,7 +648,7 @@ function checkMisiones(){
     if(misOK.includes(m.k))continue;
     if(m.f()>=m.meta){
       misOK.push(m.k);almas+=m.rec;sfxLevel();
-      if(P)texto(P.x,P.y-72,'◈ MISIÓN: '+m.n+' · +'+m.rec+' ✦','#8B7CF0',18);
+      if(P)texto(P.x,P.y-72,L('◈ MISIÓN: ','◈ MISSION: ')+m.n+' · +'+m.rec+' ✦','#8B7CF0',18);
       guardar();
     }
   }
@@ -630,13 +657,46 @@ function checkMisiones(){
 /* ================= estado de partida ================= */
 let P,piso,quota,killsPiso,killsTotal,oroRun,nivel,xp,xpNeed,ups,enemigos,gemas,monedas,balas,parts,textos,rings,portal,boss,state,shake,combo,comboT,tiempo,hintT,mod;
 let rage,rageMax,synActivas,cofres,trail,shield;
+let fury,furyT,critStreak,waveN,waveT,waveAnnounce;
+const EVOLUCIONES=[
+  {arma:'orb', req:{aspd:5},       n:L('⚡ TORMENTA SAGRADA','⚡ HOLY STORM'),     fx:'orbX3',  d:L('Hojas x3 con estelas','Blades x3 with trails')},
+  {arma:'bolt',req:{crit:4},       n:L('✦ RAYO DEL VACÍO','✦ VOID RAY'),          fx:'boltPierce',d:L('Proyectiles perforan todo','Bolts pierce everything')},
+  {arma:'dmg', req:{vamp:4},       n:L('☥ HOJA SANGRIENTA','☥ BLOOD BLADE'),      fx:'bloodDmg',d:L('Cada golpe drena 8% HP','Every hit drains 8% HP')},
+  {arma:'aspd',req:{dmg:5},        n:L('⚔ FURIA ETERNA','⚔ ETERNAL FURY'),       fx:'permFury',d:L('Velocidad de ataque x2 permanente','Permanent x2 attack speed')},
+  {arma:'area',req:{mspd:4},       n:L('◠ TAJO TITÁNICO','◠ TITANIC SLASH'),     fx:'megaArea',d:L('Alcance x2, arco completo','Range x2, full arc')},
+];
+let evolActivas=[];
+function checkEvoluciones(){
+  for(const ev of EVOLUCIONES){
+    if(evolActivas.includes(ev.fx))continue;
+    if((ups[ev.arma]||0)>=(UPGRADES.find(u=>u.k===ev.arma)?.max||99)){
+      let ok=true;
+      for(const[k,v]of Object.entries(ev.req)){if((ups[k]||0)<v){ok=false;break}}
+      if(ok){
+        evolActivas.push(ev.fx);
+        sfxSyn();shake=18;
+        const el=document.createElement('div');el.className='syn-banner';
+        el.innerHTML='<div class="syn-t">'+ev.n+'</div><div class="syn-d">'+ev.d+'</div>';
+        document.body.appendChild(el);
+        setTimeout(()=>{el.style.transition='opacity .5s';el.style.opacity=0;setTimeout(()=>el.remove(),600)},3000);
+        texto(P.x,P.y-90,L('¡EVOLUCIÓN!','EVOLUTION!'),'#FFD23C',24);
+        for(let i=0;i<40;i++){const a=R(0,6.283),v2=R(100,260);
+          parts.push({x:P.x,y:P.y,vx:Math.cos(a)*v2,vy:Math.sin(a)*v2,life:R(.6,1.1),col:'#FFD23C',r:R(2,6)})}
+      }
+    }
+  }
+}
+const hasEvo=k=>evolActivas.includes(k);
+const WAVE_NAMES_ES=['LA AVANZADA','MAREA OSCURA','ENJAMBRE','LEGIÓN MALDITA','LA HORDA FINAL'];
+const WAVE_NAMES_EN=['THE VANGUARD','DARK TIDE','THE SWARM','CURSED LEGION','THE FINAL HORDE'];
+
 let sangre,ambient;
 const BIOMAS=[
-  {n:'La Cripta',       bg:'#0B0C11',tile:'#12141C',line:'#1A1D28',fog:'#0B0C1180',accent:'#2A3040'},
-  {n:'Catacumbas',      bg:'#0E0A08',tile:'#16120E',line:'#221C14',fog:'#0E0A0880',accent:'#3A2A18'},
-  {n:'Campo de Huesos', bg:'#0C0D0A',tile:'#14160E',line:'#1E2216',fog:'#0C0D0A80',accent:'#2A3020'},
-  {n:'Santuario Sangriento',bg:'#100808',tile:'#1A0E0E',line:'#2A1414',fog:'#10080880',accent:'#3A1818'},
-  {n:'El Abismo',       bg:'#06040A',tile:'#0E0A14',line:'#1A1228',fog:'#06040A90',accent:'#1E1436'}
+  {n:L('La Cripta','The Crypt'),       bg:'#0B0C11',tile:'#12141C',line:'#1A1D28',fog:'#0B0C1180',accent:'#2A3040'},
+  {n:L('Catacumbas','Catacombs'),      bg:'#0E0A08',tile:'#16120E',line:'#221C14',fog:'#0E0A0880',accent:'#3A2A18'},
+  {n:L('Campo de Huesos','Bone Fields'), bg:'#0C0D0A',tile:'#14160E',line:'#1E2216',fog:'#0C0D0A80',accent:'#2A3020'},
+  {n:L('Santuario Sangriento','Blood Sanctum'),bg:'#100808',tile:'#1A0E0E',line:'#2A1414',fog:'#10080880',accent:'#3A1818'},
+  {n:L('El Abismo','The Abyss'),       bg:'#06040A',tile:'#0E0A14',line:'#1A1228',fog:'#06040A90',accent:'#1E1436'}
 ];
 const bioma=()=>BIOMAS[Math.min(4,Math.floor((piso-1)/5))];
 function hash(x,y){let h=Math.sin(x*127.1+y*311.7)*43758.5453;return h-Math.floor(h)}
@@ -656,6 +716,7 @@ function nuevaRun(){
   enemigos=[];gemas=[];monedas=[];balas=[];parts=[];textos=[];rings=[];
   portal=null;boss=null;state='run';shake=0;combo=0;comboT=0;tiempo=0;hintT=6;mod=null;
   rage=0;rageMax=50;synActivas=[];cofres=[];trail=[];shield=0;
+  fury=false;furyT=0;critStreak=0;waveN=0;waveT=0;waveAnnounce=0;evolActivas=[];
   sangre=[];ambient=[];
   quota=quotaPiso();
   spawnT=0;
@@ -664,12 +725,12 @@ function nuevaRun(){
   $('bossbar').style.display='none';
 }
 const quotaPiso=()=>piso%5===0?1:12+piso*4;
-const playerDMG =()=>P.dmgBase*armaEf().dmg*(1+meta.dmg)*(1+ups.dmg*.25)*(1+(piso-1)*.04)*(P.tempBuff&&P.tempBuff.tipo==='dmg'?P.tempBuff.mult:1);
+const playerDMG =()=>P.dmgBase*armaEf().dmg*(1+meta.dmg)*(1+ups.dmg*.25)*(1+(piso-1)*.04)*(P.tempBuff&&P.tempBuff.tipo==='dmg'?P.tempBuff.mult:1)*(fury?1.5:1);
 const playerSPD =()=>P.spdBase*(1+meta.spd)*(1+ups.mspd*.12)*(esMaga()?1.1:1)*(mod&&mod.pspd?mod.pspd:1)*(P.tempBuff&&P.tempBuff.tipo==='spd'?P.tempBuff.mult:1);
 const playerCRIT=()=>Math.min(90,P.crit+(armaEf().critB||0)+ups.crit*10+(P.tempBuff&&P.tempBuff.tipo==='crit'?25:0));
 const playerVAMP=()=>ups.vamp*3;
-const atkCDf    =()=>armaEf().cd/(1+ups.aspd*.18);
-const rangef    =()=>armaEf().range*(1+ups.area*.20);
+const atkCDf    =()=>armaEf().cd/(1+ups.aspd*.18)/(hasEvo('permFury')?2:1);
+const rangef    =()=>armaEf().range*(1+ups.area*.20)*(hasEvo('megaArea')?2:1);
 const magnetf   =()=>P.magnet*(1+ups.mag*.45);
 function tryDash(){
   if(state!=='run'||P.dashCD>0||P.dashing>0)return;
@@ -751,7 +812,7 @@ function spawnEnemigo(){
     spd:tipo.spd*R(.9,1.1)*(1+(piso-1)*.012)*mspd*(elite?1.08:1),
     col:tipo.col,n:tipo.n,elite,
     hitCD:0,flash:0,jefe:false,wob:Math.random()*6.28,orbCD:0,trailCD:0});
-  if(elite)texto(P.x,P.y-58,'¡ÉLITE DORADO!','#E8B33C',16);
+  if(elite)texto(P.x,P.y-58,L('¡ÉLITE DORADO!','GOLDEN ELITE!'),'#E8B33C',16);
 }
 function spawnBoss(){
   const i=piso===PISO_FINAL?4:((piso/5-1)%4);
@@ -762,7 +823,7 @@ function spawnBoss(){
     hitCD:0,flash:0,jefe:true,wob:0,chargeT:3,charging:0,cvx:0,cvy:0};
   enemigos.push(boss);
   $('bossbar').style.display='block';$('bossname').textContent=boss.n;
-  texto(P.x,P.y-80,'¡'+boss.n+' DESPIERTA!','#D44A42',22);
+  texto(P.x,P.y-80,L('¡'+boss.n+' DESPIERTA!',boss.n+' AWAKENS!'),'#D44A42',22);
   sfxBoss();shake=10;
 }
 
@@ -783,9 +844,14 @@ function dropear(e){
 function golpear(e,d,crit){
   if(crit&&hasSyn('verdugo'))d=d/2*3;
   e.hp-=d;e.flash=.12;
-  if(crit)sfxCrit();else sfxHit();
+  if(crit){sfxCrit();critStreak++;
+    if(critStreak>=3&&!fury){fury=true;furyT=5;critStreak=0;
+      texto(P.x,P.y-55,L('🔥 ¡FURIA!','🔥 FURY!'),'#FF4444',24);shake=Math.max(shake,8);
+      AU.beep(220,880,.3,'sawtooth',.25);AU.beep(440,1760,.3,'sawtooth',.2,.05)}}
+  else{sfxHit();critStreak=0}
   texto(e.x+R(-10,10),e.y-e.r-6,(crit?'✛':'')+F(d),crit?'#E8B33C':'#F0EDE4',crit?20:15);
-  const cura=d*playerVAMP()/100;
+  const vampPct=playerVAMP()+(hasEvo('bloodDmg')?8:0);
+  const cura=d*vampPct/100;
   if(cura>=1){
     if(P.hp>=P.hpMax&&hasSyn('pactosangre'))shield=Math.min(P.hpMax*.3,shield+cura);
     else P.hp=Math.min(P.hpMax,P.hp+cura);
@@ -802,6 +868,17 @@ function matar(e){
   }
   if(sangre.length>120)sangre.splice(0,sangre.length-120);
   dropear(e);
+  /* enemigos que se dividen */
+  if((e.n==='zombi'||e.n==='orco')&&!e.split&&!e.jefe&&e.r>13){
+    const n2=e.n==='zombi'?2:3;
+    for(let si=0;si<n2;si++){
+      const sa=R(0,6.283),sd=R(15,30);
+      enemigos.push({x:e.x+Math.cos(sa)*sd,y:e.y+Math.sin(sa)*sd,r:e.r*.6,
+        hp:e.hpMax*.25,hpMax:e.hpMax*.25,dmg:e.dmg*.5,
+        spd:e.spd*1.3,col:e.col,n:e.n,elite:false,split:true,
+        hitCD:0,flash:0,jefe:false,wob:R(0,6.28),orbCD:0,trailCD:0});
+    }
+  }
   killsTotal++;combo++;comboT=2;
   gstats.kills++;
   rage=Math.min(rageMax,rage+(e.jefe?rageMax:e.elite?5:1));
@@ -818,14 +895,14 @@ function matar(e){
   } else if(!portal) killsPiso++;
   if(killsPiso>=quota&&!portal){
     portal={x:P.x+R(-1,1)*220,y:P.y+R(-1,1)*220,r:34,t:0};
-    texto(portal.x,portal.y-50,'¡PORTAL ABIERTO!','#4DC0E8',20);
+    texto(portal.x,portal.y-50,L('¡PORTAL ABIERTO!','PORTAL OPEN!'),'#4DC0E8',20);
   }
 }
 function subirNivel(){
   nivel++;xp-=xpNeed;xpNeed=Math.round(10*Math.pow(1.32,nivel-1));
   if(nivel>gstats.nivelMax){gstats.nivelMax=nivel;checkMisiones()}
   const pool=UPGRADES.filter(u=>ups[u.k]<u.max);
-  if(!pool.length){texto(P.x,P.y-46,'¡PODER MÁXIMO!','#4DC0E8',18);return}
+  if(!pool.length){texto(P.x,P.y-46,L('¡PODER MÁXIMO!','MAX POWER!'),'#4DC0E8',18);return}
   sfxLevel();
   state='levelup';
   const picks=[];
@@ -833,8 +910,8 @@ function subirNivel(){
     const u=pool[RI(0,pool.length-1)];
     if(!picks.includes(u))picks.push(u);
   }
-  abrir(`<h2 class="biglvl">⬆ NIVEL ${nivel}</h2>
-    <div class="sub">Elegí tu poder. La horda no espera.</div>
+  abrir(`<h2 class="biglvl">${L('⬆ NIVEL','⬆ LEVEL')} ${nivel}</h2>
+    <div class="sub">${L('Elegí tu poder. La horda no espera.','Choose your power. The horde waits for no one.')}</div>
     <div class="cards">${picks.map(u=>`
       <div class="card" onclick="elegir('${u.k}')">
         <div class="ci">${u.ic}</div>
@@ -850,13 +927,14 @@ function elegir(k){
   texto(P.x,P.y-46,UPGRADES.find(u=>u.k===k).n+'!','#4DC0E8',18);
   state='run';cerrar();
   checkSinergias();
+  checkEvoluciones();
   if(xp>=xpNeed)subirNivel();
 }
 function siguientePiso(){
   sfxPort();
   /* interstitial ad cada 3 pisos (no en jefes) */
   if(piso%3===0&&piso%5!==0)ADS.showInterstitial();
-  piso++;killsPiso=0;quota=quotaPiso();portal=null;cofres.length=0;
+  piso++;killsPiso=0;quota=quotaPiso();portal=null;cofres.length=0;waveT=0;waveN=0;
   const newBi=Math.min(4,Math.floor((piso-1)/5));
   const oldBi=Math.min(4,Math.floor((piso-2)/5));
   if(newBi!==oldBi){
@@ -867,7 +945,7 @@ function siguientePiso(){
   if(mod){texto(P.x,P.y-86,'◆ '+mod.n,'#8B7CF0',19)}
   P.hp=Math.min(P.hpMax,P.hp+P.hpMax*.3);
   enemigos.length=0;balas.length=0;
-  texto(P.x,P.y-60,'PISO '+piso,'#E8B33C',26);
+  texto(P.x,P.y-60,L('PISO','FLOOR')+' '+piso,'#E8B33C',26);
   chispa(P.x,P.y,'#4DC0E8',26);shake=6;
   if(piso%5===0)spawnBoss();
   renderHUD();
@@ -877,24 +955,24 @@ function morir(){
   const g=Math.round(piso*10+nivel*5+killsTotal*1.2+oroRun*.06);
   almas+=g;if(piso>mejor)mejor=piso;
   checkMisiones();guardar();
-  abrir(metaHTML('☠ CAÍSTE EN EL PISO '+piso,
-    `${killsTotal} enemigos · nivel ${nivel} · ${Math.floor(tiempo/60)}m ${Math.floor(tiempo%60)}s · récord piso ${mejor}`,
-    g,'⚔ Descender de nuevo'));
+  abrir(metaHTML(L('☠ CAÍSTE EN EL PISO ','☠ FELL ON FLOOR ')+piso,
+    `${killsTotal} ${L('enemigos · nivel','enemies · level')} ${nivel} · ${Math.floor(tiempo/60)}m ${Math.floor(tiempo%60)}s · ${L('récord piso','best floor')} ${mejor}`,
+    g,L('⚔ Descender de nuevo','⚔ Descend again')));
 }
 function victoria(){
   state='dead';sfxWin();almas+=400;mejor=PISO_FINAL;guardar();
-  abrir(metaHTML('♛ VICTORIA','Aniquilaste a EL DEVORADOR. '+killsTotal+' enemigos cayeron ante vos.',400,'Nueva partida+'));
+  abrir(metaHTML(L('♛ VICTORIA','♛ VICTORY'),'Aniquilaste a EL DEVORADOR. '+killsTotal+L(' enemigos cayeron ante vos.',' enemies fell before you.'),400,L('Nueva partida+','New game+')));
 }
 const costo=k=>Math.round(15*Math.pow(1.55,lvl[k]));
 function armeriaHTML(){
-  return `<div class="secT">⚒ ARMERÍA</div>
+  return `<div class="secT">${L('⚒ ARMERÍA','⚒ ARMORY')}</div>
   <div class="wgrid">${ARMAS.map(a=>{
     const tiene=armas.includes(a.k),sel=armaSel===a.k;
     return `<div class="wcard${sel?' sel':''}" ${tiene?`onclick="seleccionarArma('${a.k}')"`:''}>
       <div class="wi">${a.ic}</div><div class="wn">${a.n}</div>
       <div class="wd">${a.d}</div>
       ${tiene
-        ?`<div class="wtag">${sel?'★ EQUIPADA':'Tocá para equipar'}</div>`
+        ?`<div class="wtag">${sel?L('★ EQUIPADA','★ EQUIPPED'):L('Tocá para equipar','Tap to equip')}</div>`
         :`<button onclick="event.stopPropagation();comprarArma('${a.k}')" ${almas<a.costo?'disabled':''}>✦ ${F(a.costo)}</button>`}
     </div>`}).join('')}</div>`;
 }
@@ -913,31 +991,31 @@ function seleccionarArma(k){
 let ultimoModal=null;
 function refrescarModal(){
   if(ultimoModal==='menu')abrir(menuHTML());
-  else if(ultimoModal&&ultimoModal.tit)abrir(metaHTML(ultimoModal.tit,ultimoModal.sub,0,ultimoModal.btn).replace('+0 almas ✦ ','✦ '));
+  else if(ultimoModal&&ultimoModal.tit)abrir(metaHTML(ultimoModal.tit,ultimoModal.sub,0,ultimoModal.btn).replace('+0 '+L('almas','souls')+' ✦ ','✦ '));
   renderHUD();
 }
 function menuHTML(){
   ultimoModal='menu';
-  return `<h2 class="bigwin">EL ABISMO DE LAS HORDAS</h2>
-  <div class="sub">Hordas infinitas · loot · morí, mejorá y bajá más hondo</div>
-  <div class="statsrow"><span>Récord <b>${mejor>0?'piso '+mejor:'—'}</b></span><span>Corridas <b>${F(runs)}</b></span><span style="color:var(--soul)">✦ <b>${F(almas)}</b></span></div>
+  return `<h2 class="bigwin">${L('EL ABISMO DE LAS HORDAS','THE ABYSS OF THE HORDES')}</h2>
+  <div class="sub">${L('Hordas infinitas · loot · morí, mejorá y bajá más hondo','Endless hordes · loot · die, upgrade, climb higher')}</div>
+  <div class="statsrow"><span>${L('Récord','Best')} <b>${mejor>0?L('piso ','floor ')+mejor:'—'}</b></span><span>${L('Corridas','Runs')} <b>${F(runs)}</b></span><span style="color:var(--soul)">✦ <b>${F(almas)}</b></span></div>
   ${personajesHTML()}
   ${esMaga()?'':armeriaHTML()}
   ${misionesHTML()}
-  <div class="secT">✦ MEJORAS PERMANENTES</div>
+  <div class="secT">${L('✦ MEJORAS PERMANENTES','✦ PERMANENT UPGRADES')}</div>
   <div class="meta-grid">${META.map(m=>`
     <div class="mcard"><h4>${m.ic} ${m.n} <em>nv ${lvl[m.k]}</em></h4><p>${m.d}</p>
     <button onclick="comprar('${m.k}')" ${almas<costo(m.k)?'disabled':''}>✦ ${F(costo(m.k))}</button></div>`).join('')}
   </div>
-  <div style="margin-top:18px"><button class="main" onclick="empezar()" style="width:100%">⚔ DESCENDER</button></div>`;
+  <div style="margin-top:18px"><button class="main" onclick="empezar()" style="width:100%">${L('⚔ DESCENDER','⚔ DESCEND')}</button></div>`;
 }
 function empezar(){nuevaRun()}
 function metaHTML(tit,sub,g,btn){
-  ultimoModal={tit,sub:'Mejora adquirida. Cada muerte te hace más fuerte.',btn};
+  ultimoModal={tit,sub:L('Mejora adquirida. Cada muerte te hace más fuerte.','Upgrade acquired. Each death makes you stronger.'),btn};
   return `<h2 class="${tit.includes('VICTORIA')?'bigwin':'bigdeath'}">${tit}</h2>
   <div class="sub">${sub}</div>
-  <div class="souls">+${F(g)} almas ✦ Total: ${F(almas)}</div>
-  ${g>0?'<button onclick="doblarAlmas('+g+')" id="adBtn" style="width:100%;margin-bottom:12px;color:#3DC97E;border-color:#2A6A40">▶ Mirá un video y duplicá las almas (+'+F(g)+' extra)</button>':''}
+  <div class="souls">+${F(g)} ${L('almas','souls')} ✦ Total: ${F(almas)}</div>
+  ${g>0?'<button onclick="doblarAlmas('+g+')" id="adBtn" style="width:100%;margin-bottom:12px;color:#3DC97E;border-color:#2A6A40">'+L('▶ Mirá un video y duplicá las almas (+','▶ Watch a video & double your souls (')+F(g)+L(' extra)',' extra)')+'</button>':''}
   ${personajesHTML()}
   ${esMaga()?'':armeriaHTML()}
   ${misionesHTML()}
@@ -966,7 +1044,7 @@ function pausaHTML(){
   const tomadas=UPGRADES.filter(u=>ups[u.k]>0).map(u=>u.ic+' '+u.n+' nv'+ups[u.k]).join(' · ')||'ninguna todavía';
   const prox=MISIONES.filter(m=>!misOK.includes(m.k)).slice(0,3)
     .map(m=>`<div class="misrow"><span>${m.n} <small>· ${m.d}</small></span><b>${F(Math.min(m.meta,m.f()))}/${F(m.meta)}</b></div>`).join('');
-  return `<h2 class="biglvl">⏸ PAUSA</h2>
+  return `<h2 class="biglvl">${L('⏸ PAUSA','⏸ PAUSED')}</h2>
   <div class="pstats">
     Personaje: <b>${PJS.find(p=>p.k===pjSel).n}</b> · Arma: <b>${esMaga()?'Orbes del vacío':armaA().n}</b><br>
     Piso <b>${piso}</b> · Nivel <b>${nivel}</b> · DPS estimado: <b>${F(dps)}</b><br>
@@ -976,29 +1054,29 @@ function pausaHTML(){
     ${P.tempBuff?'<br>Buff: <b>'+P.tempBuff.tipo+'</b> ('+Math.ceil(P.tempBuff.dur)+'s)':''}${shield>0?' · Escudo: <b>'+F(shield)+'</b>':''}
     Mejoras: ${tomadas}
   </div>
-  <div class="secT">◈ PRÓXIMAS MISIONES</div>
-  <div class="mis">${prox||'<div class="misrow ok">¡Todas completas!</div>'}</div>
+  <div class="secT">${L('◈ PRÓXIMAS MISIONES','◈ NEXT MISSIONS')}</div>
+  <div class="mis">${prox||'<div class="misrow ok">'+L('¡Todas completas!','All complete!')+'</div>'}</div>
   <div class="mrow">
-    <button class="main" onclick="togglePausa()">▶ Continuar</button>
-    <button onclick="abandonar()">☠ Abandonar corrida</button>
+    <button class="main" onclick="togglePausa()">${L('▶ Continuar','▶ Continue')}</button>
+    <button onclick="abandonar()">${L('☠ Abandonar corrida','☠ Abandon run')}</button>
   </div>`;
 }
 function misionesHTML(){
-  return `<div class="secT">◈ MISIONES <span style="font-weight:400">(${misOK.length}/${MISIONES.length})</span></div>
+  return `<div class="secT">${L('◈ MISIONES','◈ MISSIONS')} <span style="font-weight:400">(${misOK.length}/${MISIONES.length})</span></div>
   <div class="mis">${MISIONES.map(m=>{
     const ok=misOK.includes(m.k),v=Math.min(m.meta,m.f());
     return `<div class="misrow${ok?' ok':''}"><span>${ok?'✓ ':''}${m.n} <small>· ${m.d}</small></span><b>${ok?'✦'+m.rec:F(v)+'/'+F(m.meta)}</b></div>`;
   }).join('')}</div>`;
 }
 function personajesHTML(){
-  return `<div class="secT">⚑ PERSONAJES</div>
+  return `<div class="secT">${L('⚑ PERSONAJES','⚑ CHARACTERS')}</div>
   <div class="wgrid">${PJS.map(p=>{
     const tiene=pjs.includes(p.k),sel=pjSel===p.k;
     return `<div class="wcard${sel?' sel':''}" ${tiene?`onclick="seleccionarPJ('${p.k}')"`:''}>
       <div class="wi">${p.ic}</div><div class="wn">${p.n}</div>
       <div class="wd">${p.d}</div>
       ${tiene
-        ?`<div class="wtag">${sel?'★ ELEGIDO':'Tocá para elegir'}</div>`
+        ?`<div class="wtag">${sel?L('★ ELEGIDO','★ SELECTED'):L('Tocá para elegir','Tap to select')}</div>`
         :`<button onclick="event.stopPropagation();comprarPJ('${p.k}')" ${almas<p.costo?'disabled':''}>✦ ${F(p.costo)}</button>`}
     </div>`}).join('')}</div>`;
 }
@@ -1016,16 +1094,16 @@ function seleccionarPJ(k){
 function abrir(html){$('modal').innerHTML=html;$('overlay').style.display='flex'}
 function doblarAlmas(g){
   const btn=$('adBtn');if(!btn)return;
-  btn.disabled=true;btn.textContent='Cargando...';
+  btn.disabled=true;btn.textContent=L('Cargando...','Loading...');
   ADS.showRewarded(()=>{
     almas+=g;guardar();sfxLevel();
-    btn.textContent='✓ +'+F(g)+' almas recibidas';btn.style.color='#E8B33C';
+    btn.textContent='✓ +'+F(g)+L(' almas recibidas',' souls received');btn.style.color='#E8B33C';
     $('h-almas').textContent=F(almas);
     /* refrescar botones de compra */
     document.querySelectorAll('.mcard button,.wcard button').forEach(b=>{
       if(b.disabled&&b.textContent.includes('✦')){b.disabled=false}
     });
-  },()=>{btn.textContent='Video no disponible';btn.disabled=true});
+  },()=>{btn.textContent=L('Video no disponible','Video unavailable');btn.disabled=true});
 }
 function cerrar(){$('overlay').style.display='none'}
 
@@ -1033,6 +1111,19 @@ function cerrar(){$('overlay').style.display='none'}
 function update(dt){
   tiempo+=dt;
   ADS.tick(dt);
+  /* fury decay */
+  if(fury){furyT-=dt;if(furyT<=0){fury=false;texto(P.x,P.y-40,L('Furia termina','Fury ends'),'#8B8FA3',13)}}
+  /* oleadas */
+  waveT+=dt;
+  if(waveT>=25&&waveAnnounce===0){
+    waveAnnounce=1;waveN++;
+    const wn=L(WAVE_NAMES_ES,WAVE_NAMES_EN)[(waveN-1)%5];
+    texto(P.x,P.y-80,L('OLEADA','WAVE')+' '+waveN+' — '+wn,'#D44A42',22);
+    shake=10;sfxBoss();waveT=0;
+    /* spawn burst */
+    for(let wb=0;wb<6+waveN*2;wb++)spawnEnemigo();
+    setTimeout(()=>{waveAnnounce=0},3000);
+  }
   if(hintT>0){hintT-=dt;if(hintT<=0)$('hint').style.opacity=0}
   /* jugador */
   if(P.dashCD>0)P.dashCD-=dt;
@@ -1095,8 +1186,9 @@ function update(dt){
   }
   /* orbitales */
   if(ups.orb>0){
-    const orbSpd=hasSyn('tormenta')?6.4:3.2;
-    const n=ups.orb,rad=58+ups.area*6,vel=tiempo*orbSpd;
+    const orbMult=hasEvo('orbX3')?3:1;
+    const orbSpd=(hasSyn('tormenta')?6.4:3.2)*(hasEvo('orbX3')?1.5:1);
+    const n=ups.orb*orbMult,rad=58+ups.area*6,vel=tiempo*orbSpd;
     for(let i=0;i<n;i++){
       const a=vel+i*6.283/n,ox=P.x+Math.cos(a)*rad,oy=P.y+Math.sin(a)*rad;
       for(const e of enemigos){
@@ -1144,7 +1236,7 @@ function update(dt){
         const crit=Math.random()*100<playerCRIT();
         golpear(e,playerDMG()*(b.dmgM||.85)*(crit?2:1),crit);
         chispa(b.x,b.y,'#8B7CF0',5);
-        if(hasSyn('teletormenta')&&!b.pierced){
+        if((hasSyn('teletormenta')||hasEvo('boltPierce'))&&!b.pierced){
           b.pierced=true;
           let next=null,nd=Infinity;
           for(const e2 of enemigos){if(e2===e||e2.hp<=0)continue;const dd=dist2(b,e2);if(dd<nd){nd=dd;next=e2}}
@@ -1157,7 +1249,7 @@ function update(dt){
     if(hit||b.life<=0)balas.splice(i,1);
   }
   /* enemigos */
-  if(!portal&&(piso%5!==0||!boss)){
+  if(piso%5!==0||!boss){
     spawnT-=dt;
     const intv=Math.max(.14,(piso%5===0?.65:.78)-piso*.022)*(mod&&mod.spawn?mod.spawn:1)*(P.cursed>0?.5:1);
     if(spawnT<=0){spawnT=intv;spawnEnemigo()}
@@ -1177,7 +1269,7 @@ function update(dt){
           e.chargeT=R(3.5,5.5);e.charging=.8;
           const a=Math.atan2(P.y-e.y,P.x-e.x);
           e.cvx=Math.cos(a)*330;e.cvy=Math.sin(a)*330;
-          texto(e.x,e.y-e.r-16,'¡EMBISTE!','#D44A42',15);
+          texto(e.x,e.y-e.r-16,L('¡EMBISTE!','CHARGES!'),'#D44A42',15);
         } else {
           const a=Math.atan2(P.y-e.y,P.x-e.x);
           e.x+=Math.cos(a)*e.spd*dt;e.y+=Math.sin(a)*e.spd*dt;
@@ -1213,6 +1305,20 @@ function update(dt){
   }
   /* gemas y monedas */
   const mg=magnetf();
+  /* merge nearby gems into mega gems */
+  if(gemas.length>20&&Math.random()<.1){
+    for(let mi=gemas.length-1;mi>0;mi--){
+      if(gemas[mi].fly)continue;
+      for(let mj=mi-1;mj>=0;mj--){
+        if(gemas[mj].fly)continue;
+        if(dist2(gemas[mi],gemas[mj])<30*30){
+          gemas[mj].v+=gemas[mi].v;
+          gemas[mj].r=Math.min(12,gemas[mj].r+1);
+          gemas.splice(mi,1);break;
+        }
+      }
+    }
+  }
   for(let i=gemas.length-1;i>=0;i--){
     const g=gemas[i],d=Math.sqrt(dist2(P,g));
     if(d<mg)g.fly=true;
@@ -1223,6 +1329,16 @@ function update(dt){
       xp+=Math.round(g.v*xpMult);gemas.splice(i,1);
       sfxGem(1+Math.min(combo,30)*.03);
       if(hasSyn('imán'))P.hp=Math.min(P.hpMax,P.hp+5);
+      /* chain explosion: gemas cercanas se activan */
+      for(const g2 of gemas){
+        if(!g2.fly&&dist2(g,g2)<55*55){g2.fly=true;g2.chain=true}
+      }
+      /* soul harvest: muchas gemas juntas */
+      if(gemas.filter(gx=>gx.fly).length>12){
+        texto(P.x,P.y-65,L('✦ COSECHA DE ALMAS','✦ SOUL HARVEST'),'#8B7CF0',20);
+        P.superFlash=.15;shake=Math.max(shake,6);
+        AU.beep(330,1320,.3,'triangle',.2);
+      }
       if(xp>=xpNeed){subirNivel();return}
     }
   }
@@ -1260,8 +1376,8 @@ function update(dt){
     if(dist2(P,c)<(c.r+P.r)*(c.r+P.r)){abrirCofre(c)}
   }
   /* temp buff & curse decay */
-  if(P.tempBuff){P.tempBuff.dur-=dt;if(P.tempBuff.dur<=0){P.tempBuff=null;texto(P.x,P.y-40,'Buff terminado','#8B8FA3',13)}}
-  if(P.cursed>0){P.cursed-=dt;if(P.cursed<=0)texto(P.x,P.y-40,'Maldición termina','#8B8FA3',13)}
+  if(P.tempBuff){P.tempBuff.dur-=dt;if(P.tempBuff.dur<=0){P.tempBuff=null;texto(P.x,P.y-40,L('Buff terminado','Buff expired'),'#8B8FA3',13)}}
+  if(P.cursed>0){P.cursed-=dt;if(P.cursed<=0)texto(P.x,P.y-40,L('Maldición termina','Curse expired'),'#8B8FA3',13)}
   if(shield>0)shield=Math.max(0,shield-dt*2);
   if(P.superFlash>0)P.superFlash-=dt;
   /* portal */
@@ -1519,6 +1635,11 @@ function draw(){
     ctx.beginPath();ctx.arc(P.x,P.y,P.r+8+Math.sin(tiempo*6)*2,0,6.283);ctx.stroke();
     ctx.globalAlpha=1;
   }
+  /* fury tint */
+  if(fury){
+    ctx.fillStyle='rgba(180,30,20,'+(0.06+Math.sin(tiempo*8)*0.03)+')';
+    ctx.fillRect(camx,camy,W,H);
+  }
   /* super flash */
   if(P.superFlash>0){
     ctx.fillStyle='rgba(255,210,60,'+P.superFlash*.4+')';
@@ -1609,78 +1730,59 @@ function drawJugador(){
 function drawEnemigo(e){
   const x=e.x,y=e.y,w=Math.sin(e.wob)*2;
   const bi=Math.min(4,Math.floor((piso-1)/5));
-  const baseCol=e.flash>0?'#FFFFFF':tintColor(e.col,bi);
-  const eyeColors=['#14161D','#C9403A','#E8A23C','#D44A42','#8B7CF0'];
-  const eyeCol=e.flash>0?'#FFFFFF':eyeColors[bi];
-  ctx.fillStyle='#00000055';ctx.beginPath();ctx.ellipse(x,y+e.r*.9,e.r*.85,e.r*.3,0,0,6.283);ctx.fill();
-  if(e.jefe){
-    ctx.fillStyle=baseCol;ctx.beginPath();ctx.arc(x,y+w,e.r,0,6.283);ctx.fill();
-    ctx.strokeStyle='#1A0C0C';ctx.lineWidth=3;ctx.stroke();
-    ctx.fillStyle='#FFD23C';
-    ctx.beginPath();ctx.arc(x-e.r*.35,y-e.r*.2+w,6,0,6.283);ctx.fill();
-    ctx.beginPath();ctx.arc(x+e.r*.35,y-e.r*.2+w,6,0,6.283);ctx.fill();
-    ctx.strokeStyle='#1A0C0C';ctx.lineWidth=3;
-    ctx.beginPath();ctx.moveTo(x-e.r*.5,y+e.r*.35+w);
-    for(let i=0;i<5;i++)ctx.lineTo(x-e.r*.5+(i+.5)*e.r*.2,y+e.r*(i%2?.35:.5)+w);
-    ctx.stroke();
-    ctx.fillStyle='#FFD23C';
-    ctx.beginPath();ctx.moveTo(x-14,y-e.r-2+w);ctx.lineTo(x-10,y-e.r-14+w);ctx.lineTo(x-5,y-e.r-4+w);
-    ctx.lineTo(x,y-e.r-16+w);ctx.lineTo(x+5,y-e.r-4+w);ctx.lineTo(x+10,y-e.r-14+w);ctx.lineTo(x+14,y-e.r-2+w);
-    ctx.closePath();ctx.fill();
-  } else {
-    if(e.elite){
-      ctx.strokeStyle='#E8B33C';ctx.lineWidth=3;
-      ctx.beginPath();ctx.arc(x,y+w,e.r+4+Math.sin(e.wob*1.5)*1.5,0,6.283);ctx.stroke();
-      if(Math.random()<.08)parts.push({x:x+R(-e.r,e.r),y:y+R(-e.r,e.r),vx:0,vy:-30,life:.4,col:'#E8B33C',r:2});
-    }
-    ctx.fillStyle=baseCol;ctx.beginPath();ctx.arc(x,y+w,e.r,0,6.283);ctx.fill();
-    ctx.strokeStyle=e.elite?'#E8B33C':'#14161D';ctx.lineWidth=2;ctx.stroke();
-    /* cuernos en biomas altos */
-    if(bi>=2&&e.r>13&&!e.elite){
-      ctx.strokeStyle=baseCol;ctx.lineWidth=3;ctx.lineCap='round';
-      ctx.beginPath();ctx.moveTo(x-e.r*.5,y-e.r*.6+w);ctx.lineTo(x-e.r*.7,y-e.r-4+w);
-      ctx.moveTo(x+e.r*.5,y-e.r*.6+w);ctx.lineTo(x+e.r*.7,y-e.r-4+w);ctx.stroke();
-      ctx.lineCap='butt';
-    }
-    /* ojos con color de bioma */
-    ctx.fillStyle=eyeCol;
-    if(e.n==='rata'){
-      ctx.beginPath();ctx.arc(x-4,y-2+w,2,0,6.283);ctx.arc(x+4,y-2+w,2,0,6.283);ctx.fill();
-      ctx.strokeStyle=baseCol;ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(x-e.r,y+w);ctx.quadraticCurveTo(x-e.r-9,y-5+w,x-e.r-13,y+2+w);ctx.stroke();
-    } else if(e.n==='esqueleto'){
-      ctx.beginPath();ctx.arc(x-4.5,y-3+w,2.8,0,6.283);ctx.arc(x+4.5,y-3+w,2.8,0,6.283);ctx.fill();
-      ctx.fillStyle='#14161D';ctx.fillRect(x-5,y+4+w,10,2);ctx.fillRect(x-3.5,y+3+w,1.6,4);ctx.fillRect(x+2,y+3+w,1.6,4);
-    } else if(e.n==='espectro'){
-      ctx.beginPath();ctx.arc(x-4,y-2+w,2.5,0,6.283);ctx.arc(x+4,y-2+w,2.5,0,6.283);ctx.fill();
-      ctx.fillStyle='#14161D';ctx.beginPath();ctx.ellipse(x,y+5+w,2.5,4,0,0,6.283);ctx.fill();
-    } else if(e.n==='cultista'){
-      ctx.fillStyle=bi>=3?'#E8A23C':'#E0C8F0';
-      ctx.beginPath();ctx.arc(x-4,y-2+w,2.2,0,6.283);ctx.arc(x+4,y-2+w,2.2,0,6.283);ctx.fill();
-      ctx.strokeStyle=bi>=3?'#8A2020':'#14161D';ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(x-e.r*.7,y-e.r*.5+w);ctx.lineTo(x,y-e.r-5+w);ctx.lineTo(x+e.r*.7,y-e.r*.5+w);ctx.stroke();
-    } else if(e.n==='orco'||e.n==='gárgola'){
-      ctx.fillStyle=eyeCol;
-      ctx.beginPath();ctx.arc(x-5,y-3+w,2.8,0,6.283);ctx.arc(x+5,y-3+w,2.8,0,6.283);ctx.fill();
-      ctx.fillStyle='#E8E4D0';
-      ctx.beginPath();ctx.moveTo(x-6,y+6+w);ctx.lineTo(x-4,y+11+w);ctx.lineTo(x-2,y+6+w);ctx.closePath();ctx.fill();
-      ctx.beginPath();ctx.moveTo(x+2,y+6+w);ctx.lineTo(x+4,y+11+w);ctx.lineTo(x+6,y+6+w);ctx.closePath();ctx.fill();
-      ctx.strokeStyle='#14161D';ctx.lineWidth=2.5;
-      ctx.beginPath();ctx.moveTo(x-e.r*.6,y-e.r*.7+w);ctx.lineTo(x-e.r-4,y-e.r-2+w);
-      ctx.moveTo(x+e.r*.6,y-e.r*.7+w);ctx.lineTo(x+e.r+4,y-e.r-2+w);ctx.stroke();
-    } else {
-      ctx.beginPath();ctx.arc(x-4.5,y-2+w,2.5,0,6.283);ctx.arc(x+4.5,y-2+w,2.5,0,6.283);ctx.fill();
-      ctx.strokeStyle='#14161D';ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(x-5,y+5+w);ctx.lineTo(x+5,y+6.5+w);ctx.stroke();
-    }
-    /* glow en ojos para biomas oscuros */
-    if(bi>=3){
-      ctx.fillStyle=eyeCol+'33';
-      ctx.beginPath();ctx.arc(x-4,y-2+w,5,0,6.283);ctx.fill();
-      ctx.beginPath();ctx.arc(x+4,y-2+w,5,0,6.283);ctx.fill();
-    }
+
+  /* sombra */
+  ctx.fillStyle='#00000055';
+  ctx.beginPath();ctx.ellipse(x,y+e.r*.9,e.r*.85,e.r*.3,0,0,6.283);ctx.fill();
+
+  /* anillo élite */
+  if(e.elite&&!e.jefe){
+    ctx.strokeStyle='#E8B33C';ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(x,y+w,e.r+5+Math.sin(e.wob*1.5)*1.5,0,6.283);ctx.stroke();
+    if(Math.random()<.06)parts.push({x:x+R(-e.r,e.r),y:y+R(-e.r,e.r),vx:0,vy:-30,life:.4,col:'#E8B33C',r:2});
   }
-  /* barra hp mini */
+
+  /* sprite */
+  const sprKey=e.jefe
+    ?JEFE_SPR[piso===25?4:((Math.floor((piso-1)/5))%4)]
+    :(ENE_SPR[e.n]||'imp');
+  const spr=ESPR[sprKey];
+  if(spr&&spr.img){
+    const frame=Math.floor(tiempo*5)%spr.n;
+    const scale=e.jefe?4.5:(e.r>18?3.2:(e.r>13?2.8:2.4));
+    const dw=spr.w*scale,dh=spr.h*scale;
+    ctx.save();
+    ctx.translate(x,y+w-dh*.15);
+    ctx.imageSmoothingEnabled=false;
+    /* flash blanco al recibir daño */
+    if(e.flash>0){
+      ctx.globalAlpha=.85;
+      ctx.filter='brightness(3)';
+    }
+    ctx.drawImage(spr.img, frame*spr.w, 0, spr.w, spr.h, -dw/2, -dh/2, dw, dh);
+    if(e.flash>0){ctx.filter='none';ctx.globalAlpha=1}
+    ctx.restore();
+  } else {
+    /* fallback: círculo si el sprite no cargó */
+    ctx.fillStyle=e.col;ctx.beginPath();ctx.arc(x,y+w,e.r,0,6.283);ctx.fill();
+    ctx.strokeStyle='#14161D';ctx.lineWidth=2;ctx.stroke();
+  }
+
+  /* corona del jefe */
+  if(e.jefe){
+    const cr=e.r*.6;
+    ctx.fillStyle='#FFD23C';
+    ctx.beginPath();
+    ctx.moveTo(x-cr,y-e.r*.8+w);
+    ctx.lineTo(x-cr*.7,y-e.r*1.2+w);ctx.lineTo(x-cr*.35,y-e.r*.9+w);
+    ctx.lineTo(x,y-e.r*1.3+w);
+    ctx.lineTo(x+cr*.35,y-e.r*.9+w);ctx.lineTo(x+cr*.7,y-e.r*1.2+w);
+    ctx.lineTo(x+cr,y-e.r*.8+w);
+    ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#A07B2E';ctx.lineWidth=1.5;ctx.stroke();
+  }
+
+  /* barra de HP mini */
   if(e.hp<e.hpMax&&!e.jefe){
     const bw=e.r*2;
     ctx.fillStyle='#000A';ctx.fillRect(x-bw/2,y-e.r-9,bw,4);
@@ -1693,13 +1795,18 @@ let lastHUD=0;
 function renderHUD(){
   $('hpbar').firstElementChild.style.width=Math.max(0,P.hp/P.hpMax*100)+'%';
   $('xpbar').firstElementChild.style.width=Math.min(100,xp/xpNeed*100)+'%';
-  $('lvltag').textContent='Nivel '+nivel+' · '+F(P.hp)+'/'+F(P.hpMax)+' HP';
+  $('lvltag').textContent=L('Nivel','Lvl')+' '+nivel+' · '+F(P.hp)+'/'+F(P.hpMax)+' HP';
   $('h-oro').textContent=F(oroRun);
   $('h-almas').textContent=F(almas);
-  $('h-best').textContent=mejor>0?'piso '+mejor:'—';
-  $('quota').firstElementChild.textContent='PISO '+piso+(piso%5===0?' · JEFE':' · '+bioma().n);
-  $('qsub').textContent=portal?'¡Entrá al portal!':(piso%5===0?(boss?'Derrotá al jefe':'…'):killsPiso+' / '+quota+' enemigos');
-  $('modline').textContent=mod?'◆ '+mod.n+' — '+mod.d:'';
+  $('h-best').textContent=mejor>0?L('piso ','floor ')+mejor:'—';
+  $('h-rec-label').textContent=L('Récord','Best');
+  /* piso display moved to timer line above */
+  $('qsub').textContent=portal?L('¡Entrá al portal!','Enter the portal!'):(piso%5===0?(boss?L('Derrotá al jefe','Defeat the boss'):'…'):killsPiso+' / '+quota+L(' enemigos',' enemies'));
+  $('modline').innerHTML=(mod?'◆ '+mod.n+' — '+mod.d:'')
+    +(fury?' · <span style=color:#FF4444>'+L('🔥 FURIA','🔥 FURY')+'</span>':'');
+  /* timer */
+  const mins=Math.floor(tiempo/60),secs=Math.floor(tiempo%60);
+  $('quota').firstElementChild.textContent=L('PISO','FLOOR')+' '+piso+(piso%5===0?L(' · JEFE',' · BOSS'):' · '+bioma().n)+' · '+mins+':'+(secs<10?'0':'')+secs;
   const c=$('combo');
   if(combo>=5){c.textContent='x'+combo+' COMBO';c.style.opacity=1;
     c.style.fontSize=Math.min(40,24+combo*.4)+'px'}
@@ -1709,12 +1816,12 @@ function renderHUD(){
   const rp=Math.min(100,rage/rageMax*100);
   $('ragebar').firstElementChild.style.width=rp+'%';
   const sb=$('superbtn'),rt=$('ragetag');
-  if(rage>=rageMax){rt.innerHTML='<b>🔥 IRA LISTA</b> (Q)';sb.className='ready';sb.textContent='🔥'}
-  else{rt.textContent=Math.round(rp)+'% ira';sb.className='';sb.textContent=Math.round(rp)+'%'}
+  if(rage>=rageMax){rt.innerHTML='<b>'+L('🔥 IRA LISTA','🔥 WRATH READY')+'</b> (Q)';sb.className='ready';sb.textContent='🔥'}
+  else{rt.textContent=Math.round(rp)+L('% ira','% rage');sb.className='';sb.textContent=Math.round(rp)+'%'}
   const di=$('dashind'),db=$('dashbtn');
-  if(P.dashCD>0){di.textContent='Dash en '+P.dashCD.toFixed(1)+'s';
+  if(P.dashCD>0){di.textContent=L('Dash en ','Dash in ')+P.dashCD.toFixed(1)+'s';
     db.style.opacity=.35;db.textContent=Math.ceil(P.dashCD)}
-  else{di.innerHTML='<b>⚡ Dash listo</b> (espacio)';
+  else{di.innerHTML='<b>'+L('⚡ Dash listo','⚡ Dash ready')+'</b> ('+L('espacio','space')+')';
     db.style.opacity=1;db.textContent='⚡'}
 }
 
@@ -1727,7 +1834,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 nuevaRun();
-runs--; /* la primera corrida real se cuenta al apretar DESCENDER */
+runs--; /* first real run counted on DESCEND press */
 state='menu';
 abrir(menuHTML());
 requestAnimationFrame(loop);
