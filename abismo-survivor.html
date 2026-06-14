@@ -972,29 +972,38 @@ function dropRelic(x,y){
 // ===== 2. DAILY MISSIONS =====
 function getDailyMissions(){
   const today=new Date().toISOString().slice(0,10);
-  const saved=store.get('abismo_daily');
-  if(saved){
-    try{const d=JSON.parse(saved);if(d.date===today)return d}catch(e){}
-  }
-  /* generar 3 misiones basadas en la fecha */
-  const seed=today.split('-').reduce((a,b)=>a*31+parseInt(b),0);
-  const pool=[
-    {d:()=>L('Eliminá 200 enemigos','Kill 200 enemies'),          k:'kills', meta:200, prog:0},
-    {d:()=>L('Llegá al piso 8','Reach floor 8'),                  k:'piso',  meta:8,   prog:0},
-    {d:()=>L('Lográ un combo x20','Reach a x20 combo'),           k:'combo', meta:20,  prog:0},
-    {d:()=>L('Juntá 500 de oro','Collect 500 gold'),              k:'oro',   meta:500, prog:0},
-    {d:()=>L('Matá 3 élites','Kill 3 elites'),                    k:'elite', meta:3,   prog:0},
-    {d:()=>L('Llegá a nivel 10','Reach level 10'),                k:'nivel', meta:10,  prog:0},
-    {d:()=>L('Derrotá 1 jefe','Defeat 1 boss'),                  k:'jefe',  meta:1,   prog:0},
-    {d:()=>L('Sobreviví 3 minutos','Survive 3 minutes'),          k:'time',  meta:180, prog:0},
-    {d:()=>L('Activá FURIA 2 veces','Trigger FURY 2 times'),     k:'fury',  meta:2,   prog:0},
-    {d:()=>L('Abrí 2 cofres','Open 2 chests'),                   k:'cofre', meta:2,   prog:0},
+  const DAILY_POOL=[
+    {id:0, de:L('Eliminá 200 enemigos','Kill 200 enemies'),          k:'kills', meta:200},
+    {id:1, de:L('Llegá al piso 8','Reach floor 8'),                  k:'piso',  meta:8},
+    {id:2, de:L('Lográ un combo x20','Reach a x20 combo'),           k:'combo', meta:20},
+    {id:3, de:L('Juntá 500 de oro','Collect 500 gold'),              k:'oro',   meta:500},
+    {id:4, de:L('Matá 3 élites','Kill 3 elites'),                    k:'elite', meta:3},
+    {id:5, de:L('Llegá a nivel 10','Reach level 10'),                k:'nivel', meta:10},
+    {id:6, de:L('Derrotá 1 jefe','Defeat 1 boss'),                  k:'jefe',  meta:1},
+    {id:7, de:L('Sobreviví 3 minutos','Survive 3 minutes'),          k:'time',  meta:180},
+    {id:8, de:L('Activá FURIA 2 veces','Trigger FURY 2 times'),     k:'fury',  meta:2},
+    {id:9, de:L('Abrí 2 cofres','Open 2 chests'),                   k:'cofre', meta:2},
   ];
+  /* v2: clear old format */if(store.get('abismo_daily_v')!=='2'){store.set('abismo_daily',null);store.set('abismo_daily_v','2')}
+const saved=store.get('abismo_daily');
+  if(saved){
+    try{
+      const d=JSON.parse(saved);
+      if(d.date===today){
+        /* reconstruir funciones desde el pool */
+        d.missions.forEach(m=>{const p=DAILY_POOL.find(x=>x.id===m.id);if(p)m.de=p.de});
+        return d;
+      }
+    }catch(e){}
+  }
+  const seed=today.split('-').reduce((a,b)=>a*31+parseInt(b),0);
   const picks=[];const used=new Set();
   for(let i=0;i<3;i++){
-    let idx=(seed*7+i*13+seed%(i+3))%pool.length;
-    while(used.has(idx))idx=(idx+1)%pool.length;
-    used.add(idx);picks.push({...pool[idx],rew:30+i*15});
+    let idx=(seed*7+i*13+seed%(i+3))%DAILY_POOL.length;
+    while(used.has(idx))idx=(idx+1)%DAILY_POOL.length;
+    used.add(idx);
+    const p=DAILY_POOL[idx];
+    picks.push({id:p.id,de:p.de,k:p.k,meta:p.meta,prog:0,rew:30+i*15});
   }
   const data={date:today,missions:picks,claimed:[false,false,false]};
   store.set('abismo_daily',JSON.stringify(data));
@@ -1031,7 +1040,7 @@ function dailyHTML(){
   const rows=dailyData.missions.map((m,i)=>{
     const done=dailyData.claimed[i];
     const pct=Math.min(100,Math.round(m.prog/m.meta*100));
-    return '<div class="misrow'+(done?' ok':'')+'"><span>'+(done?'✓ ':'')+m.d()+
+    return '<div class="misrow'+(done?' ok':'')+'"><span>'+(done?'✓ ':'')+m.de+
       '</span><b>'+(done?'✦'+m.rew:pct+'%')+'</b></div>';
   }).join('');
   return '<div class="secT">'+L('📅 MISIONES DIARIAS','📅 DAILY MISSIONS')+'</div><div class="mis">'+rows+'</div>';
