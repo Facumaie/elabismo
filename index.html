@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>El Abismo de las Hordas — Roguelite de hordas infinitas</title>
-<meta name="description" content="Bajá al abismo. Enfrentá hordas infinitas. Morí, mejorá, bajá más hondo. Roguelite de acción gratuito que corre en el navegador.">
-<meta name="keywords" content="roguelite, vampire survivors, juego gratis, browser game, hordas, acción, pixel art">
+<meta name="description" content="Roguelite de hordas infinitas. 8 armas, 5 personajes, reliquias legendarias, sinergias ocultas, modo infinito, ranking global. Gratis en tu navegador.">
+<meta name="keywords" content="roguelite, vampire survivors, juego gratis, browser game, hordas, acción, pixel art, dark fantasy, infinite mode">
 <meta property="og:title" content="El Abismo de las Hordas">
-<meta property="og:description" content="Roguelite de hordas infinitas. Movimiento libre, 5 armas, sinergias ocultas, meta-progresión. Gratis en tu navegador.">
+<meta property="og:description" content="8 armas, 5 personajes, reliquias legendarias, modo infinito, ranking global. Morí, mejorá, bajá más hondo. Gratis en tu navegador.">
 <meta property="og:type" content="website">
 <!-- Google AdSense -->
 <meta name="google-adsense-account" content="ca-pub-4308334954434166">
@@ -42,6 +42,9 @@ h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(28px,6vw,56px);let
 .cta{display:inline-flex;align-items:center;gap:10px;margin-top:36px;padding:18px 48px;font-family:'Cinzel',serif;font-weight:800;font-size:clamp(18px,3vw,24px);letter-spacing:4px;color:var(--bg);background:linear-gradient(135deg,var(--gold),#F0C850);border:none;border-radius:14px;cursor:pointer;text-decoration:none;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 24px #E8B33C33}
 .cta:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 8px 36px #E8B33C55}
 .cta:active{transform:scale(.97)}
+.cta-alt{background:linear-gradient(135deg,#3A3E50,#4A5068);color:#E0DED5;box-shadow:0 4px 24px #00000033;font-size:clamp(14px,2.5vw,18px);padding:16px 36px}
+.cta-alt:hover{box-shadow:0 8px 36px #4A506855}
+.version-note{font-size:12px;color:var(--mut);text-align:center;margin-top:8px}
 
 .platforms{display:flex;gap:18px;justify-content:center;margin-top:18px;font-size:13px;color:var(--mut)}
 .platforms span{display:flex;align-items:center;gap:5px}
@@ -117,12 +120,17 @@ for(let i=0;i<20;i++){
   <div class="skull">⚔</div>
   <h1>EL ABISMO<br>DE LAS HORDAS</h1>
   <p class="subtitle">ROGUELITE DE HORDAS INFINITAS</p>
-  <p class="tagline">Bajás al abismo. Te rodean. Matás todo lo que se mueve. Morís. <em>Volvés más fuerte.</em></p>
-  <a href="abismo-survivor.html" class="cta">⚔ JUGAR</a>
+  <p class="tagline">Bajás al abismo. Te rodean. Matás todo lo que se mueve. Morís. <em>Volvés más fuerte.</em> ¿Hasta qué piso llegás?</p>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:36px">
+    <a href="abismo-survivor.html" class="cta">⚔ JUGAR HD</a>
+    <a href="abismo-classic.html" class="cta cta-alt">⚔ JUGAR CLASSIC</a>
+  </div>
+  <p class="version-note">HD: arte detallado dark fantasy · Classic: pixel art retro, carga instantánea</p>
   <div class="platforms">
     <span>🖥 PC</span>
     <span>📱 Celular</span>
     <span>🌐 Sin descarga</span>
+    <span>🏆 Ranking global</span>
   </div>
 </section>
 
@@ -133,33 +141,33 @@ for(let i=0;i<20;i++){
   <div class="features">
     <div class="feat">
       <div class="fi">⚔</div>
-      <h3>5 armas, 5 estilos</h3>
-      <p>Espada equilibrada, dagas frenéticas, lanza de largo alcance, hacha de giro completo y martillo sísmico con onda expansiva. Cada una cambia cómo jugás.</p>
+      <h3>8 armas, 8 estilos</h3>
+      <p>Espada, dagas, lanza, hacha giratoria, martillo sísmico, látigo, arco y guadaña del segador. Cada una cambia cómo jugás. 5 evoluciones ocultas que descubrís al maxearlas.</p>
     </div>
     <div class="feat">
       <div class="fi">✦</div>
-      <h3>2 personajes</h3>
-      <p>El Caballero del abismo pelea cuerpo a cuerpo con todo el arsenal. La Maga del Vacío dispara orbes teledirigidos a distancia. Builds completamente distintos.</p>
+      <h3>5 personajes</h3>
+      <p>Caballero, Maga del Vacío, Nigromante con esqueletos aliados, Berserker con furia extendida, y Asesina con invisibilidad post-dash. Builds completamente distintos.</p>
     </div>
     <div class="feat">
-      <div class="fi">⚡</div>
-      <h3>Sinergias ocultas</h3>
-      <p>6 combinaciones secretas entre mejoras. Cuando descubrís que Vampirismo + Vitalidad crea un escudo de sangre, el juego cambia para siempre.</p>
+      <div class="fi">👑</div>
+      <h3>Reliquias legendarias</h3>
+      <p>12 objetos pasivos que dropean de jefes y élites. La Corona del Vacío hace explotar enemigos, el Filo del Verdugo ejecuta a los débiles. Máximo 3 por corrida — cada una cambia las reglas.</p>
     </div>
     <div class="feat">
       <div class="fi">☠</div>
-      <h3>25 pisos, 5 biomas</h3>
-      <p>De La Cripta al Abismo. Cada zona cambia los colores, las decoraciones y la dificultad. Jefes con mecánicas propias cada 5 pisos. Élites dorados acechando.</p>
+      <h3>Modo infinito + 5 biomas</h3>
+      <p>25 pisos con jefes épicos y 5 biomas que se oscurecen progresivamente. Después del piso 25: modo infinito con dificultad y recompensas escalando sin límite. ¿Hasta dónde llegás?</p>
     </div>
     <div class="feat">
       <div class="fi">🔥</div>
-      <h3>Ira del Abismo</h3>
-      <p>Cargá tu ira con cada kill. Cuando explota, todo lo que hay en pantalla muere. Ondas expansivas, lluvia de loot, screen shake. El pico del power fantasy.</p>
+      <h3>Sinergias y evoluciones</h3>
+      <p>6 sinergias ocultas + 5 evoluciones de armas. Tres críticos seguidos activan FURIA. Los zombis se dividen al morir. Gemas explotan en cadena. Cada corrida es distinta.</p>
     </div>
     <div class="feat">
-      <div class="fi">◈</div>
-      <h3>12 misiones</h3>
-      <p>Carnicero, Cazaélites, Matajefes, Imparable. Objetivos de corto y mediano plazo que te dan almas extra y una razón para cada corrida.</p>
+      <div class="fi">🏆</div>
+      <h3>Ranking global + misiones</h3>
+      <p>Leaderboard en tiempo real con Firebase. 12 logros permanentes. 3 misiones diarias que cambian a medianoche. Tienda del mercader entre pisos. Meta-progresión con almas.</p>
     </div>
   </div>
 </section>
@@ -167,13 +175,16 @@ for(let i=0;i<20;i++){
 <!-- ARSENAL -->
 <section class="section" style="padding-top:20px">
   <h2 class="section-title">EL ARSENAL</h2>
-  <p class="section-sub">Desbloqueá armas con almas. Cada una tiene mecánica propia.</p>
+  <p class="section-sub">Desbloqueá armas con almas. Cada una tiene mecánica propia. 5 pueden evolucionar.</p>
   <div class="weapons">
     <div class="wpn"><div class="wi">⚔</div><div class="wn">Espada</div><div class="wd">Arco amplio</div></div>
     <div class="wpn"><div class="wi">🗡</div><div class="wn">Dagas</div><div class="wd">Veloces +crít</div></div>
     <div class="wpn"><div class="wi">➹</div><div class="wn">Lanza</div><div class="wd">Largo alcance</div></div>
     <div class="wpn"><div class="wi">❂</div><div class="wn">Hacha</div><div class="wd">Giro 360°</div></div>
     <div class="wpn"><div class="wi">⬢</div><div class="wn">Martillo</div><div class="wd">Onda sísmica</div></div>
+    <div class="wpn"><div class="wi">〰</div><div class="wn">Látigo</div><div class="wd">Rápido y amplio</div></div>
+    <div class="wpn"><div class="wi">🏹</div><div class="wn">Arco</div><div class="wd">A distancia</div></div>
+    <div class="wpn"><div class="wi">⚶</div><div class="wn">Guadaña</div><div class="wd">Atrae enemigos</div></div>
   </div>
 </section>
 
@@ -217,7 +228,11 @@ for(let i=0;i<20;i++){
 <section class="cta2-wrap">
   <div class="cta2-text">¿LISTO PARA DESCENDER?</div>
   <p class="cta2-sub">Gratis. Sin descarga. Sin registro. Corré directo en tu navegador.</p>
-  <a href="abismo-survivor.html" class="cta">⚔ JUGAR AHORA</a>
+  <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <a href="abismo-survivor.html" class="cta">⚔ JUGAR HD</a>
+    <a href="abismo-classic.html" class="cta cta-alt">⚔ JUGAR CLASSIC</a>
+  </div>
+  <p class="version-note">HD: sprites de alta calidad (665KB) · Classic: pixel art retro, carga instantánea (136KB)</p>
 </section>
 
 <!-- FOOTER -->
@@ -239,7 +254,7 @@ for(let i=0;i<20;i++){
     <strong>Términos:</strong> Este juego es gratuito y se ofrece tal cual. No ofrecemos garantías de disponibilidad.
   </div>
   <div style="margin-top:8px" id="contact">
-    <strong>Contacto:</strong> [facueho@gmail.com]
+    <strong>Contacto:</strong> [tu-email@ejemplo.com]
   </div>
 </footer>
 
