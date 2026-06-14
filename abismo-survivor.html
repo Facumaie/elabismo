@@ -2212,10 +2212,10 @@ function draw(){
     ctx.fillStyle='#4DC0E80C';ctx.beginPath();ctx.arc(0,0,portal.r+25+Math.sin(pu)*8,0,6.283);ctx.fill();
     if(ps&&ps.img){
       const pf=Math.floor(tiempo*6)%ps.n;
-      const psc=2.2+Math.sin(pu)*.15;
-      ctx.rotate(pu*.3);
+      const psc=1.8+Math.sin(pu)*.12;
+      ctx.globalAlpha=.9;
       ctx.drawImage(ps.img,pf*ps.w,0,ps.w,ps.h,-ps.w*psc/2,-ps.h*psc/2,ps.w*psc,ps.h*psc);
-      ctx.rotate(-pu*.3);
+      ctx.globalAlpha=1;
     } else {
       for(let i=3;i>=1;i--){
         ctx.strokeStyle=i===1?'#4DC0E8':'#2E8AB0';ctx.lineWidth=i===1?5:3;
@@ -2233,8 +2233,11 @@ function draw(){
   for(const g of gemas){
     const gs=OSPR.gem;
     if(gs&&gs.img){
-      const gf=Math.floor(tiempo*6)%gs.n,gsc=g.r>6?1.8:1.2;
-      ctx.drawImage(gs.img,gf*gs.w,0,gs.w,gs.h,g.x-gs.w*gsc/2,g.y-gs.h*gsc/2,gs.w*gsc,gs.h*gsc);
+      const gf=Math.floor(tiempo*6)%gs.n,gsc=g.r>6?1.1:.7;
+      const bob2=Math.sin(tiempo*4+g.x*.1)*2;
+      ctx.globalAlpha=.85;
+      ctx.drawImage(gs.img,gf*gs.w,0,gs.w,gs.h,g.x-gs.w*gsc/2,g.y+bob2-gs.h*gsc/2,gs.w*gsc,gs.h*gsc);
+      ctx.globalAlpha=1;
     } else {
       ctx.fillStyle='#4DC0E8';ctx.save();ctx.translate(g.x,g.y);ctx.rotate(.785);
       ctx.fillRect(-g.r*.8,-g.r*.8,g.r*1.6,g.r*1.6);ctx.restore();
@@ -2244,13 +2247,13 @@ function draw(){
     if(m.pot){
       const ps=OSPR.potion;
       if(ps&&ps.img){const pf=Math.floor(tiempo*5)%ps.n;
-        ctx.drawImage(ps.img,pf*ps.w,0,ps.w,ps.h,m.x-ps.w*.7,m.y-ps.h*.7,ps.w*1.4,ps.h*1.4);
+        ctx.drawImage(ps.img,pf*ps.w,0,ps.w,ps.h,m.x-ps.w*.5,m.y-ps.h*.5,ps.w*1,ps.h*1);
       } else {ctx.fillStyle='#3DC97E';ctx.beginPath();ctx.arc(m.x,m.y,7,0,6.283);ctx.fill();
         ctx.fillStyle='#0B0C11';ctx.fillRect(m.x-4,m.y-1.5,8,3);ctx.fillRect(m.x-1.5,m.y-4,3,8)}
     } else {
       const cs=OSPR.coin;
       if(cs&&cs.img){const cf=Math.floor(tiempo*5)%cs.n;
-        ctx.drawImage(cs.img,cf*cs.w,0,cs.w,cs.h,m.x-cs.w*.7,m.y-cs.h*.7,cs.w*1.4,cs.h*1.4);
+        ctx.drawImage(cs.img,cf*cs.w,0,cs.w,cs.h,m.x-cs.w*.45,m.y-cs.h*.45,cs.w*.9,cs.h*.9);
       } else {ctx.fillStyle='#E8B33C';ctx.beginPath();ctx.arc(m.x,m.y,6,0,6.283);ctx.fill();
         ctx.strokeStyle='#A07B2E';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(m.x,m.y,3.5,0,6.283);ctx.stroke()}
     }
