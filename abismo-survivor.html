@@ -1634,7 +1634,7 @@ function update(dt){
   if(fury){furyT-=dt;if(furyT<=0){fury=false;texto(P.x,P.y-40,L('Furia termina','Fury ends'),'#8B8FA3',13)}}
   /* oleadas */
   waveT+=dt;
-  if(waveT>=25&&waveAnnounce===0){
+  if(waveT>=Math.min(24,10+piso*2)&&waveAnnounce===0){
     waveAnnounce=1;waveN++;
     const wn=L(WAVE_NAMES_ES,WAVE_NAMES_EN)[(waveN-1)%5];
     texto(P.x,P.y-80,L('OLEADA','WAVE')+' '+waveN+' — '+wn,'#D44A42',22);
@@ -1773,7 +1773,7 @@ function update(dt){
   /* enemigos */
   if(piso%5!==0||!boss){
     spawnT-=dt;
-    const intv=Math.max(.14,(piso%5===0?.65:.78)-piso*.022)*(mod&&mod.spawn?mod.spawn:1)*(P.cursed>0?.5:1);
+    const intv=Math.max(.14,(piso%5===0?.65:.60)-piso*.022)*(mod&&mod.spawn?mod.spawn:1)*(P.cursed>0?.5:1);
     if(spawnT<=0){spawnT=intv;spawnEnemigo()}
   }
   for(let i=enemigos.length-1;i>=0;i--){
@@ -2592,6 +2592,223 @@ abrir(menuHTML());
 /* ocultar loading screen */
 const ld=document.getElementById('loading');if(ld)ld.style.display='none';
 requestAnimationFrame(loop);
+
+/* ============================================================
+   BOT DE QA / AUTOPLAY  ·  activar con  ?bot=1  en la URL
+   Lee el estado interno (P, enemigos, gemas, portal, state…),
+   juega solo, navega los menús y reporta errores.
+   ============================================================ */
+(function(){
+  try{
+    if(!new URLSearchParams(location.search).has('bot')) return;
+  }catch(_){ return; }
+
+  /* ---------- estado del bot ---------- */
+  const issues=[];
+  const seen={};                 /* throttle por type+msg */
+  let runCount=0, maxPiso=0, botFrames=0;
+  let lastNivel=0, lastSuper=0;
+  let prevState='menu', lastUIState='', uiStuck=0;
+  let lastFrameTs=performance.now();
+  let botOn=true;
+  const TICK=70;
+
+  /* ---------- registro de incidencias ---------- */
+  function logIssue(type,msg){
+    const key=type+'|'+msg;
+    const now=performance.now();
+    if(seen[key] && now-seen[key]<3000) return;   /* no spamear */
+    seen[key]=now;
+    const it={ t:+(now/1000).toFixed(1), run:runCount,
+               piso:(typeof piso!=='undefined'?piso:'?'),
+               nivel:(typeof nivel!=='undefined'?nivel:'?'),
+               state:(typeof state!=='undefined'?state:'?'),
+               type, msg };
+    issues.push(it);
+    try{ console.warn('%c[BOT]','color:#E8B33C', type, '·', msg); }catch(_){}
+    paintOverlay();
+  }
+
+  /* ---------- enganches de error ---------- */
+  window.addEventListener('error', e=>{
+    logIssue('JS_ERROR', (e.message||'?')+' @ '+(e.filename||'').split('/').pop()+':'+(e.lineno||'?'));
+  });
+  window.addEventListener('unhandledrejection', e=>{
+    logIssue('PROMISE_REJECT', String(e.reason));
+  });
+  const _ce=console.error;
+  console.error=function(){
+    try{ logIssue('CONSOLE_ERROR', Array.prototype.map.call(arguments,String).join(' ')); }catch(_){}
+    return _ce.apply(console, arguments);
+  };
+
+  /* ---------- heartbeat del loop (detectar frames colgados) ---------- */
+  try{
+    const _draw=draw;
+    draw=function(){ botFrames++; lastFrameTs=performance.now(); return _draw.apply(this,arguments); };
+  }catch(_){}
+
+  /* ---------- control de movimiento ---------- */
+  function clearKeys(){ ['w','a','s','d'].forEach(k=>{ try{keys[k]=false;}catch(_){} }); }
+  function setMove(vx,vy){
+    clearKeys();
+    const th=0.18;
+    try{
+      if(vy<-th)keys['w']=true; if(vy>th)keys['s']=true;
+      if(vx<-th)keys['a']=true; if(vx>th)keys['d']=true;
+    }catch(_){}
+  }
+
+  /* ---------- cerebro de supervivencia (estilo VS) ---------- */
+  function brain(){
+    if(typeof P==='undefined'||!P) return;
+    let vx=0,vy=0,nearest=Infinity;
+    try{
+      for(const e of enemigos){
+        const dx=P.x-e.x, dy=P.y-e.y, d=Math.hypot(dx,dy)||1;
+        if(d<175){ const w=(175-d)/175; vx+=dx/d*w*1.3; vy+=dy/d*w*1.3; }
+        if(d<nearest) nearest=d;
+      }
+    }catch(_){}
+    /* portal: prioridad si está abierto */
+    try{
+      if(typeof portal!=='undefined' && portal){
+        const dx=portal.x-P.x, dy=portal.y-P.y, d=Math.hypot(dx,dy)||1;
+        vx+=dx/d*1.5; vy+=dy/d*1.5;
+      } else if(nearest>80){
+        /* recoger gema más cercana cuando es seguro */
+        let bg=null,bd=Infinity;
+        for(const g of gemas){ const d=Math.hypot(P.x-g.x,P.y-g.y); if(d<bd){bd=d;bg=g;} }
+        if(bg){ const dx=bg.x-P.x,dy=bg.y-P.y,d=Math.hypot(dx,dy)||1; vx+=dx/d*0.7; vy+=dy/d*0.7; }
+      }
+    }catch(_){}
+    if(vx===0&&vy===0){ const t=performance.now()/700; vx=Math.cos(t); vy=Math.sin(t); } /* deambular */
+    setMove(vx,vy);
+    if(nearest<30){ try{tryDash();}catch(_){} }
+    if(performance.now()-lastSuper>6000){ try{trySuper();}catch(_){} lastSuper=performance.now(); }
+  }
+
+  /* ---------- navegación de menús (usa el DOM real) ---------- */
+  function advanceUI(){
+    const md=document.getElementById('modal');
+    if(!md) return;
+    try{
+      if(state==='levelup'){
+        const c=md.querySelector('.cards .card:not(.disabled)')||md.querySelector('.cards .card');
+        if(c)c.click();
+      } else if(state==='shop'){
+        const cont=Array.prototype.find.call(md.querySelectorAll('button.main'),b=>/Continuar|Continue/.test(b.textContent));
+        if(cont)cont.click(); else if(typeof cerrarTienda==='function')cerrarTienda();
+      } else if(state==='dead'||state==='menu'){
+        const b=md.querySelector('button.main');
+        if(b)b.click();
+      } else if(state==='pause'){
+        if(typeof togglePausa==='function')togglePausa();
+      }
+    }catch(e){ logIssue('UI_THROW', String(e)); }
+  }
+
+  /* ---------- chequeo de invariantes ---------- */
+  function checkInvariants(){
+    try{
+      if(typeof P!=='undefined'&&P){
+        if(!isFinite(P.x)||!isFinite(P.y)) logIssue('NAN_POS','P.x/P.y no finito: '+P.x+','+P.y);
+        if(!isFinite(P.hp)) logIssue('NAN_HP','P.hp no finito: '+P.hp);
+        if(P.hpMax>0 && P.hp>P.hpMax+1) logIssue('HP_OVERFLOW','hp '+Math.round(P.hp)+' > hpMax '+Math.round(P.hpMax));
+        if(state==='run' && P.hp<-1) logIssue('HP_NEGATIVE','hp negativo en run sin morir: '+P.hp);
+      }
+      if(typeof xpNeed!=='undefined' && xpNeed<=0) logIssue('XPNEED_BAD','xpNeed <= 0: '+xpNeed);
+      if(typeof nivel!=='undefined'){
+        if(state==='run' && nivel<lastNivel) logIssue('LEVEL_DROP','nivel bajó en run: '+lastNivel+'→'+nivel);
+        lastNivel=nivel;
+      }
+      if(typeof enemigos!=='undefined' && enemigos.length>220) logIssue('ENEMY_FLOOD','enemigos.length='+enemigos.length);
+      if(typeof gemas!=='undefined'    && gemas.length>600)    logIssue('GEM_FLOOD','gemas.length='+gemas.length);
+      if(typeof balas!=='undefined'    && balas.length>1500)   logIssue('BULLET_FLOOD','balas.length='+balas.length);
+      if(typeof parts!=='undefined'    && parts.length>6000)   logIssue('PARTS_FLOOD','parts.length='+parts.length);
+    }catch(e){ logIssue('CHECK_THROW', String(e)); }
+  }
+
+  /* ---------- overlay ---------- */
+  let ov;
+  function buildOverlay(){
+    ov=document.createElement('div');
+    ov.style.cssText='position:fixed;top:8px;left:8px;z-index:99999;background:rgba(8,12,18,.86);'
+      +'color:#CFE8F5;font:11px/1.45 monospace;padding:8px 10px;border:1px solid #2E6A8A;border-radius:8px;'
+      +'min-width:188px;pointer-events:auto;white-space:pre';
+    document.body.appendChild(ov);
+    const bar=document.createElement('div');
+    bar.style.cssText='margin-top:6px;display:flex;gap:6px';
+    const mk=(t,fn)=>{ const b=document.createElement('button'); b.textContent=t;
+      b.style.cssText='flex:1;font:10px monospace;padding:3px 4px;cursor:pointer;background:#13344a;color:#9BE8FF;border:1px solid #2E6A8A;border-radius:5px';
+      b.onclick=fn; return b; };
+    bar.appendChild(mk('⏸/▶', ()=>{ botOn=!botOn; if(!botOn)clearKeys(); paintOverlay(); }));
+    bar.appendChild(mk('⬇ reporte', downloadReport));
+    ov.appendChild(bar);
+    ov._txt=document.createElement('div'); ov.insertBefore(ov._txt, bar);
+  }
+  function paintOverlay(){
+    if(!ov) return;
+    const last=issues[issues.length-1];
+    const errs=issues.filter(i=>/ERROR|NAN|THROW|REJECT|FLOOD|STALL|STUCK|DROP|OVERFLOW|NEGATIVE|BAD/.test(i.type)).length;
+    ov._txt.textContent=
+      '🤖 BOT QABISMO  '+(botOn?'▶ activo':'⏸ pausa')+'\n'
+      +'estado : '+(typeof state!=='undefined'?state:'?')+'\n'
+      +'run #'+runCount+'  ·  piso '+(typeof piso!=='undefined'?piso:'?')+'  (máx '+maxPiso+')\n'
+      +'nivel '+(typeof nivel!=='undefined'?nivel:'?')+'  ·  kills '+(typeof killsTotal!=='undefined'?killsTotal:'?')+'\n'
+      +'hp '+(typeof P!=='undefined'&&P?Math.round(P.hp)+'/'+Math.round(P.hpMax):'?')+'  ·  frames '+botFrames+'\n'
+      +'⚠ incidencias: '+errs+(last?'\núlt: '+last.type:'');
+  }
+
+  /* ---------- reporte descargable ---------- */
+  window.__botReport=function(){
+    return { generado:new Date().toISOString(), runs:runCount, maxPiso:maxPiso,
+             frames:botFrames, totalIncidencias:issues.length, incidencias:issues };
+  };
+  function downloadReport(){
+    try{
+      const blob=new Blob([JSON.stringify(window.__botReport(),null,2)],{type:'application/json'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob); a.download='abismo-bot-reporte.json'; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+    }catch(e){ console.warn('[BOT] no se pudo descargar:',e); }
+  }
+
+  /* ---------- bucle principal del bot ---------- */
+  buildOverlay(); paintOverlay();
+  setInterval(()=>{
+    if(!botOn) return;
+    try{
+      /* seguimiento de runs / pisos */
+      if(typeof state!=='undefined'){
+        if(state==='run'){
+          if(prevState!=='run' && (prevState==='menu'||prevState==='dead')) runCount++;
+          if(typeof piso!=='undefined') maxPiso=Math.max(maxPiso,piso);
+        }
+        prevState=state;
+      }
+      advanceUI();
+      if(typeof state!=='undefined' && state==='run') brain(); else clearKeys();
+      checkInvariants();
+
+      /* loop colgado */
+      if(performance.now()-lastFrameTs>1800)
+        logIssue('FRAME_STALL','el loop no dibujó hace >1.8s (posible cuelgue o pestaña en segundo plano)');
+
+      /* atascado en una pantalla de UI */
+      if(typeof state!=='undefined'){
+        if(state!=='run' && state===lastUIState){
+          uiStuck+=TICK;
+          if(uiStuck>4500){ logIssue('UI_STUCK','atascado en "'+state+'" >4.5s (el botón no respondió)'); uiStuck=0; }
+        } else uiStuck=0;
+        lastUIState=state;
+      }
+      paintOverlay();
+    }catch(e){ logIssue('BOT_THROW', String(e&&e.stack||e)); }
+  }, TICK);
+
+  console.log('%c🤖 BOT DE QA ACTIVO','color:#9BE8FF;font-weight:bold','— jugando solo. Reporte: window.__botReport()');
+})();
 </script>
 </body>
 </html>

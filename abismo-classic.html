@@ -1614,7 +1614,7 @@ function update(dt){
   if(fury){furyT-=dt;if(furyT<=0){fury=false;texto(P.x,P.y-40,L('Furia termina','Fury ends'),'#8B8FA3',13)}}
   /* oleadas */
   waveT+=dt;
-  if(waveT>=25&&waveAnnounce===0){
+  if(waveT>=Math.min(24,10+piso*2)&&waveAnnounce===0){
     waveAnnounce=1;waveN++;
     const wn=L(WAVE_NAMES_ES,WAVE_NAMES_EN)[(waveN-1)%5];
     texto(P.x,P.y-80,L('OLEADA','WAVE')+' '+waveN+' — '+wn,'#D44A42',22);
@@ -1753,7 +1753,7 @@ function update(dt){
   /* enemigos */
   if(piso%5!==0||!boss){
     spawnT-=dt;
-    const intv=Math.max(.14,(piso%5===0?.65:.78)-piso*.022)*(mod&&mod.spawn?mod.spawn:1)*(P.cursed>0?.5:1);
+    const intv=Math.max(.14,(piso%5===0?.65:.60)-piso*.022)*(mod&&mod.spawn?mod.spawn:1)*(P.cursed>0?.5:1);
     if(spawnT<=0){spawnT=intv;spawnEnemigo()}
   }
   for(let i=enemigos.length-1;i>=0;i--){
