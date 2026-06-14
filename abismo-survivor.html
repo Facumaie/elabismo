@@ -1927,6 +1927,7 @@ function draw(){
   ctx.fillStyle=B.bg;ctx.fillRect(0,0,W,H);
   const camx=P.x-W/2+(shake?R(-shake,shake):0);
   const camy=P.y-H/2+(shake?R(-shake,shake):0);
+  _camx=camx;_camy=camy;_W=W;_H=H;
   ctx.save();ctx.translate(-camx,-camy);
 
   /* ===== PISO CON TILES DE BIOMA ===== */
@@ -2467,8 +2468,9 @@ function drawJugador(){
   }
   ctx.globalAlpha=1;
 }
+let _camx=0,_camy=0,_W=0,_H=0;
 function drawEnemigo(e){
-  if(e.x<camx-80||e.x>camx+W+80||e.y<camy-80||e.y>camy+H+80)return;
+  if(e.x<_camx-80||e.x>_camx+_W+80||e.y<_camy-80||e.y>_camy+_H+80)return;
   const x=e.x,y=e.y,w=Math.sin(e.wob)*2;
   const bi=Math.min(4,Math.floor((piso-1)/5));
 
