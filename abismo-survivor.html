@@ -2208,12 +2208,12 @@ function draw(){
     const pu=portal.t*4;
     const ps=OSPR.portal;
     ctx.save();ctx.translate(portal.x,portal.y);
-    /* resplandor */
-    ctx.fillStyle='#4DC0E80C';ctx.beginPath();ctx.arc(0,0,portal.r+25+Math.sin(pu)*8,0,6.283);ctx.fill();
+    /* resplandor estático */
+    ctx.fillStyle='#4DC0E80C';ctx.beginPath();ctx.arc(0,0,portal.r+25,0,6.283);ctx.fill();
     if(ps&&ps.img){
-      const pf=Math.floor(tiempo*6)%ps.n;
-      const psc=1.8+Math.sin(pu)*.12;
-      ctx.globalAlpha=.9;
+      const pf=1;        /* frame fijo: el archway centrado, el más limpio */
+      const psc=1.8;     /* escala fija, sin pulso → el portal queda quieto */
+      ctx.globalAlpha=.95;
       ctx.drawImage(ps.img,pf*ps.w,0,ps.w,ps.h,-ps.w*psc/2,-ps.h*psc/2,ps.w*psc,ps.h*psc);
       ctx.globalAlpha=1;
     } else {
@@ -2284,25 +2284,30 @@ function draw(){
     ctx.fillStyle='#FFD23C44';ctx.beginPath();ctx.arc(tr.x,tr.y,8,0,6.283);ctx.fill();
   }
   ctx.globalAlpha=1;
-  /* cofres */
+  /* cofres — 1 solo, limpio y estático (procedural) */
   for(const c of cofres){
     if(c.abierto)continue;
-    const glow=.5+Math.sin(c.t*4)*.3;
-    ctx.fillStyle='rgba(232,179,60,'+glow*.15+')';
-    ctx.beginPath();ctx.arc(c.x,c.y,c.r+8+Math.sin(c.t*3)*3,0,6.283);ctx.fill();
-    const cs=OSPR.chest_closed;
-    if(cs&&cs.img){
-      const cf=Math.floor(tiempo*3)%cs.n;
-      ctx.drawImage(cs.img,cf*cs.w,0,cs.w,cs.h,c.x-cs.w*.8,c.y-cs.h*.8,cs.w*1.6,cs.h*1.6);
-    } else {
-      ctx.save();ctx.translate(c.x,c.y);
-      ctx.fillStyle='#6B4F1D';
-      ctx.beginPath();ctx.moveTo(-14,4);ctx.lineTo(-16,10);ctx.lineTo(16,10);ctx.lineTo(14,4);ctx.closePath();ctx.fill();
-      ctx.fillStyle='#8A6B30';
-      ctx.beginPath();ctx.moveTo(-14,4);ctx.quadraticCurveTo(0,-8,14,4);ctx.closePath();ctx.fill();
-      ctx.fillStyle='#E8B33C';ctx.beginPath();ctx.arc(0,3,3,0,6.283);ctx.fill();
-      ctx.restore();
-    }
+    /* resplandor suave ESTÁTICO (sin pulso) */
+    ctx.fillStyle='rgba(232,179,60,.10)';
+    ctx.beginPath();ctx.arc(c.x,c.y,c.r+10,0,6.283);ctx.fill();
+    ctx.save();ctx.translate(c.x,c.y+2);
+    /* sombra */
+    ctx.fillStyle='#00000044';ctx.beginPath();ctx.ellipse(0,12,16,4,0,0,6.283);ctx.fill();
+    /* cuerpo */
+    ctx.fillStyle='#5A3D18';ctx.fillRect(-15,-2,30,14);
+    ctx.fillStyle='#6E4C1F';ctx.fillRect(-15,-2,30,5);
+    /* tapa abovedada */
+    ctx.fillStyle='#7A5524';ctx.beginPath();ctx.moveTo(-15,-2);ctx.quadraticCurveTo(0,-16,15,-2);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#8C6329';ctx.beginPath();ctx.moveTo(-15,-4);ctx.quadraticCurveTo(0,-15,15,-4);ctx.lineTo(15,-6);ctx.quadraticCurveTo(0,-17,-15,-6);ctx.closePath();ctx.fill();
+    /* herrajes dorados verticales */
+    ctx.fillStyle='#C9A03A';ctx.fillRect(-11,-9,3,21);ctx.fillRect(8,-9,3,21);
+    /* banda + cerradura central */
+    ctx.fillStyle='#E8B33C';ctx.fillRect(-2.5,-11,5,23);
+    ctx.fillStyle='#FCE08A';ctx.beginPath();ctx.arc(0,3,3.2,0,6.283);ctx.fill();
+    ctx.fillStyle='#5A3D18';ctx.fillRect(-1,3,2,4);
+    /* línea borde tapa */
+    ctx.strokeStyle='#C9A03A';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-15,-2);ctx.lineTo(15,-2);ctx.stroke();
+    ctx.restore();
   }
   /* ondas expansivas */
   for(const rn of rings){
@@ -2451,7 +2456,7 @@ function drawJugador(){
   const spr=SPRITES[sprKey];
   const sprW=spr.width,sprH=spr.height;
   const isHQ=sprW>=48;
-  const scale=isHQ?1.65:3.2;
+  const scale=isHQ?1.452:2.816;   /* -12% (era 1.65 / 3.2) */
   const dw=(isHQ?sprW:24)*scale,dh=(isHQ?sprH:24)*scale;
   ctx.save();
   ctx.translate(x,y+bob-8);
@@ -2494,7 +2499,7 @@ function drawEnemigo(e){
   const spr=ESPR[sprKey];
   if(spr&&spr.img){
     const frame=Math.floor(tiempo*5)%spr.n;
-    const scale=e.jefe?2.2:(e.r>18?2.2:(e.r>13?1.9:1.7));
+    const scale=e.jefe?1.936:(e.r>18?1.936:(e.r>13?1.672:1.496));   /* -12% (era 2.2/2.2/1.9/1.7) */
     const dw=spr.w*scale,dh=spr.h*scale;
     /* cache frame canvases on first use */
     if(!spr._fc){spr._fc={};for(let fi=0;fi<spr.n;fi++){const c2=document.createElement('canvas');c2.width=spr.w;c2.height=spr.h;c2.getContext('2d').drawImage(spr.img,fi*spr.w,0,spr.w,spr.h,0,0,spr.w,spr.h);spr._fc[fi]=c2}}
