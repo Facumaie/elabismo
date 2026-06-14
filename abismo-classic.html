@@ -7,28 +7,25 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔</text></svg>">
 <!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4308334954434166" crossorigin="anonymous"></script>
-<!-- Firebase SDK -->
-<script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import{getFirestore,collection,addDoc,query,orderBy,limit,getDocs}from"https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-
-const firebaseConfig={
-  apiKey:"AIzaSyC57qROKeV5q_tJoY3hpMQZ-wZNWfHItvc",
-  authDomain:"fixturedped.firebaseapp.com",
-  projectId:"fixturedped",
-  storageBucket:"fixturedped.firebasestorage.app",
-  messagingSenderId:"507439934837",
-  appId:"1:507439934837:web:fcfcb012d52ed59f11b73c"
-};
-
-try{
-  const app=initializeApp(firebaseConfig);
-  const db=getFirestore(app);
-  window._LB={db,collection,addDoc,query,orderBy,limit,getDocs,ready:true};
-}catch(e){
-  console.log('Firebase no configurado, ranking local');
-  window._LB={ready:false};
-}
+<!-- Firebase: carga 100% async, nunca bloquea el juego -->
+<script>
+window._LB={ready:false};
+(async function(){
+  try{
+    const{initializeApp}=await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js");
+    const{getFirestore,collection,addDoc,query,orderBy,limit,getDocs}=await import("https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js");
+    const app=initializeApp({
+      apiKey:"AIzaSyC57qROKeV5q_tJoY3hpMQZ-wZNWfHItvc",
+      authDomain:"fixturedped.firebaseapp.com",
+      projectId:"fixturedped",
+      storageBucket:"fixturedped.firebasestorage.app",
+      messagingSenderId:"507439934837",
+      appId:"1:507439934837:web:fcfcb012d52ed59f11b73c"
+    });
+    const db=getFirestore(app);
+    window._LB={db,collection,addDoc,query,orderBy,limit,getDocs,ready:true};
+  }catch(e){console.log('Firebase offline')}
+})();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -200,6 +197,10 @@ button.main:hover:not(:disabled){background:#4A3C18}
 </head>
 <body>
 <canvas id="cv"></canvas>
+<div id="loading" style="position:fixed;inset:0;background:#0B0C11;display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column">
+  <div style="font-family:'Cinzel',serif;font-size:24px;color:#E8B33C;letter-spacing:3px;text-align:center">EL ABISMO<br>DE LAS HORDAS</div>
+  <div style="margin-top:16px;font-size:14px;color:#8B8FA3">Cargando...</div>
+</div>
 
 <div id="hud">
   <div class="hudrow">
@@ -2538,6 +2539,7 @@ nuevaRun();
 runs--; /* first real run counted on DESCEND press */
 state='menu';
 abrir(menuHTML());
+const ld=document.getElementById('loading');if(ld)ld.style.display='none';
 requestAnimationFrame(loop);
 </script>
 </body>
