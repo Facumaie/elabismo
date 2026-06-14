@@ -2203,45 +2203,48 @@ function draw(){
     ctx.fillStyle=a.col;ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,6.283);ctx.fill();
   }
   ctx.globalAlpha=1;
-  /* portal con sprite */
+  /* portal procedural — limpio y estático (vórtice de luz) */
   if(portal){
-    const pu=portal.t*4;
-    const ps=OSPR.portal;
+    const pu=portal.t*4, pr=portal.r;
     ctx.save();ctx.translate(portal.x,portal.y);
-    /* resplandor estático */
-    ctx.fillStyle='#4DC0E80C';ctx.beginPath();ctx.arc(0,0,portal.r+25,0,6.283);ctx.fill();
-    if(ps&&ps.img){
-      const pf=1;        /* frame fijo: el archway centrado, el más limpio */
-      const psc=1.8;     /* escala fija, sin pulso → el portal queda quieto */
-      ctx.globalAlpha=.95;
-      ctx.drawImage(ps.img,pf*ps.w,0,ps.w,ps.h,-ps.w*psc/2,-ps.h*psc/2,ps.w*psc,ps.h*psc);
-      ctx.globalAlpha=1;
-    } else {
-      for(let i=3;i>=1;i--){
-        ctx.strokeStyle=i===1?'#4DC0E8':'#2E8AB0';ctx.lineWidth=i===1?5:3;
-        ctx.beginPath();ctx.arc(0,0,portal.r*i/3+Math.sin(pu+i)*5,0,6.283);ctx.stroke();
-      }
-      ctx.fillStyle='#4DC0E844';ctx.beginPath();ctx.arc(0,0,portal.r,0,6.283);ctx.fill();
+    /* resplandor exterior */
+    ctx.fillStyle='#4DC0E814';ctx.beginPath();ctx.arc(0,0,pr+22,0,6.283);ctx.fill();
+    /* núcleo con gradiente radial */
+    const grd=ctx.createRadialGradient(0,0,2,0,0,pr);
+    grd.addColorStop(0,'#EAFBFF');grd.addColorStop(.25,'#7FE0FF');grd.addColorStop(.6,'#2E8AB0');grd.addColorStop(1,'#123A55');
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(0,0,pr,0,6.283);ctx.fill();
+    /* anillos concéntricos (estáticos) */
+    for(let i=1;i<=3;i++){
+      ctx.strokeStyle=i===3?'#CFF4FF':'#4DC0E8';ctx.lineWidth=i===3?3:2;ctx.globalAlpha=.5+i*.15;
+      ctx.beginPath();ctx.arc(0,0,pr*(i/3.4),0,6.283);ctx.stroke();
     }
+    ctx.globalAlpha=1;
+    /* borde */
+    ctx.strokeStyle='#9BE8FF';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(0,0,pr,0,6.283);ctx.stroke();
+    /* etiqueta */
     ctx.fillStyle='#4DC0E8';ctx.font='700 13px "IBM Plex Sans"';ctx.textAlign='center';
-    ctx.globalAlpha=.5+Math.sin(pu)*.3;
-    ctx.fillText(L('▼ PORTAL ▼','▼ PORTAL ▼'),0,-portal.r-22);
+    ctx.globalAlpha=.55+Math.sin(pu)*.25;
+    ctx.fillText(L('▼ PORTAL ▼','▼ PORTAL ▼'),0,-pr-22);
     ctx.globalAlpha=1;
     ctx.restore();
   }
   /* gemas y monedas */
   for(const g of gemas){
-    const gs=OSPR.gem;
-    if(gs&&gs.img){
-      const gf=Math.floor(tiempo*6)%gs.n,gsc=g.r>6?1.1:.7;
-      const bob2=Math.sin(tiempo*4+g.x*.1)*2;
-      ctx.globalAlpha=.85;
-      ctx.drawImage(gs.img,gf*gs.w,0,gs.w,gs.h,g.x-gs.w*gsc/2,g.y+bob2-gs.h*gsc/2,gs.w*gsc,gs.h*gsc);
-      ctx.globalAlpha=1;
-    } else {
-      ctx.fillStyle='#4DC0E8';ctx.save();ctx.translate(g.x,g.y);ctx.rotate(.785);
-      ctx.fillRect(-g.r*.8,-g.r*.8,g.r*1.6,g.r*1.6);ctx.restore();
-    }
+    const s=g.r*1.15;
+    /* glow */
+    ctx.fillStyle='rgba(77,192,232,.18)';
+    ctx.beginPath();ctx.arc(g.x,g.y,s+3,0,6.283);ctx.fill();
+    ctx.save();ctx.translate(g.x,g.y);
+    /* cuerpo diamante */
+    ctx.fillStyle='#2E8AB0';
+    ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*.78,0);ctx.lineTo(0,s);ctx.lineTo(-s*.78,0);ctx.closePath();ctx.fill();
+    /* faceta superior clara */
+    ctx.fillStyle='#5FD0EE';
+    ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*.78,0);ctx.lineTo(0,0);ctx.lineTo(-s*.78,0);ctx.closePath();ctx.fill();
+    /* brillo */
+    ctx.fillStyle='#CFF4FF';
+    ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*.28,-s*.4);ctx.lineTo(0,0);ctx.lineTo(-s*.28,-s*.4);ctx.closePath();ctx.fill();
+    ctx.restore();
   }
   for(const m of monedas){
     if(m.pot){
