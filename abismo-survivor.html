@@ -1113,7 +1113,8 @@ function nuevaRun(){
      spdBase:175,dmgBase:13,atkT:0,
      crit:5+meta.crit,vamp:0,regen:0,magnet:70*(1+meta.mag),
      dir:1,swing:0,swingAng:0,swingTipo:'arc',inv:0,
-     dashCD:0,dashing:0,dashVX:0,dashVY:0,boltT:0,superFlash:0,tempBuff:null,cursed:0};
+     dashCD:0,dashing:0,dashVX:0,dashVY:0,boltT:0,superFlash:0,tempBuff:null,cursed:0,
+     minions:[],minionKills:0};
   ups={dmg:0,aspd:0,area:0,mspd:0,hp:0,orb:0,bolt:0,mag:0,crit:0,vamp:0,regen:0};
   piso=1;killsPiso=0;killsTotal=0;oroRun=0;nivel=1;xp=0;xpNeed=10;
   enemigos=[];gemas=[];monedas=[];balas=[];parts=[];textos=[];rings=[];
@@ -1135,6 +1136,8 @@ const playerCRIT=()=>Math.min(90,P.crit+(armaEf().critB||0)+ups.crit*10+(P.tempB
 const playerVAMP=()=>ups.vamp*3;
 const atkCDf    =()=>armaEf().cd/(1+ups.aspd*.18)/(hasEvo('permFury')?2:1)/(hasRel('amuleto')?1.2:1);
 const rangef    =()=>armaEf().range*(1+ups.area*.20)*(hasEvo('megaArea')?2:1);
+/* ¿el enemigo está dentro del viewport? (evita atacar/matar lo que no se ve) */
+const enPantalla=(e,m=40)=>e.x>=_camx-m&&e.x<=_camx+_W+m&&e.y>=_camy-m&&e.y<=_camy+_H+m;
 const magnetf   =()=>P.magnet*(1+ups.mag*.45)*(hasRel('ojo')?1.25:1);
 function tryDash(){
   if(state!=='run'||P.dashCD>0||P.dashing>0)return;
@@ -1608,6 +1611,7 @@ function update(dt){
   if(P.stealth){P.stealthT-=dt;if(P.stealthT<=0||P.swing>0)P.stealth=false}
   /* necro minions */
   if(esNecro()){
+    if(!P.minions)P.minions=[]; if(P.minionKills==null)P.minionKills=0;
     if(P.minionKills>=15&&P.minions.length<4){
       P.minionKills=0;
       P.minions.push({x:P.x+R(-30,30),y:P.y+R(-30,30),atkT:0});
@@ -1663,9 +1667,9 @@ function update(dt){
   /* ataque automático (según arma equipada) */
   P.atkT-=dt;
   if(P.atkT<=0&&enemigos.length){
-    const A=armaA();
+    const A=armaEf();
     let cerca=null,cd=Infinity;
-    for(const e of enemigos){const d=dist2(P,e);if(d<cd){cd=d;cerca=e}}
+    for(const e of enemigos){if(!enPantalla(e))continue;const d=dist2(P,e);if(d<cd){cd=d;cerca=e}}
     const rg=rangef();
     if(cerca&&cd<rg*rg*1.2){
       P.atkT=atkCDf();
@@ -1680,6 +1684,7 @@ function update(dt){
       } else {
       const arco=A.arc*(1+ups.area*.12);
       for(const e of enemigos){
+        if(!enPantalla(e))continue;
         const d=Math.sqrt(dist2(P,e));
         if(d<rg+e.r){
           let ok=arco>=6.28;
@@ -1730,7 +1735,7 @@ function update(dt){
     if(P.boltT<=0&&enemigos.length){
       P.boltT=1.1/ups.bolt;
       let cerca=null,cd=Infinity;
-      for(const e of enemigos){const d=dist2(P,e);if(d<cd){cd=d;cerca=e}}
+      for(const e of enemigos){if(!enPantalla(e))continue;const d=dist2(P,e);if(d<cd){cd=d;cerca=e}}
       if(cerca&&cd<560*560){
         const a=Math.atan2(cerca.y-P.y,cerca.x-P.x);
         balas.push({x:P.x,y:P.y,vx:Math.cos(a)*430,vy:Math.sin(a)*430,life:1.6});
