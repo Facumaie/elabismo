@@ -405,6 +405,7 @@ function buildAssassin(walk){
 /* classic: procedural assassin */
 /* fallbacks */
 SPRITES.ni=buildNecro();
+SPRITES.nw=SPRITES.ni; /* fix: frame de caminar faltaba (nigromante desaparecía al moverse) */
 SPRITES.bi=buildBerserker(false);SPRITES.bw=buildBerserker(true);
 SPRITES.ai=buildAssassin(false);SPRITES.aw=buildAssassin(true);
 /* Knight: sprite de alta calidad desde sprite sheet */
@@ -439,6 +440,7 @@ function loadHQSprite(keys, b64, fw, fh){
 }
 /* classic: procedural mage */
 SPRITES.mi=buildMage(); /* fallback */
+SPRITES.mw=SPRITES.mi; /* fix: frame de caminar faltaba (maga desaparecía al moverse) */
 
 /* ================= enemy sprites (Dungeon Tileset II) ================= */
 const ESPR={};
@@ -2602,7 +2604,7 @@ function drawJugador(){
   /* sprite (offscreen canvas — siempre disponible, sin flickering) */
   const walkFrame=moving&&Math.floor(t*4)%2===1;
   const sprKey=esMaga()?(walkFrame?'mw':'mi'):esNecro()?(walkFrame?'nw':'ni'):esBerserker()?(walkFrame?'bw':'bi'):esAsesina()?(walkFrame?'aw':'ai'):(walkFrame?'kw':'ki');
-  const spr=SPRITES[sprKey];
+  const spr=SPRITES[sprKey]||SPRITES.ki; /* guard anti-crash */
   const sprW=spr.width,sprH=spr.height;
   const isHQ=sprW>=48;
   const scale=isHQ?1.65:3.2;
