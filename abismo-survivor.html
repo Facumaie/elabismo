@@ -1747,7 +1747,7 @@ function update(dt){
   ADS.tick(dt);
   if(Math.floor(tiempo)%5===0)updateDaily();
   /* stealth decay (asesina) */
-  if(P.stealth){P.stealthT-=dt;if(P.stealthT<=0||P.swing>0)P.stealth=false}
+  if(P.stealth){P.stealthT-=dt;if(P.stealthT<=0)P.stealth=false}
   /* necro minions */
   if(esNecro()){
     if(P.minionKills>=15&&P.minions.length<4){
@@ -1805,7 +1805,7 @@ function update(dt){
   /* ataque automático (según arma equipada) */
   P.atkT-=dt;
   if(P.atkT<=0&&enemigos.length){
-    const A=armaA();
+    const A=armaEf();
     let cerca=null,cd=Infinity;
     for(const e of enemigos){const d=dist2(P,e);if(d<cd){cd=d;cerca=e}}
     const rg=rangef();
